@@ -1,0 +1,165 @@
+{
+  "lang": {
+    "en": "English",
+    "zh": "中文",
+    "switchToEn": "切换为英文",
+    "switchToZh": "切换为中文"
+  },
+  "workspace": {
+    "tabLabel": "工作区 {{index}}",
+    "addTab": "新建工作区（与当前布局一致）",
+    "closeTab": "关闭此工作区",
+    "tabListAria": "工作区标签"
+  },
+  "sidebar": {
+    "title": "连接",
+    "subtitle": "管理 RabbitMQ Broker，浏览拓扑结构",
+    "addConnection": "新增连接",
+    "listHeading": "Broker 列表",
+    "loading": "加载中…",
+    "empty": "尚未配置连接",
+    "emptyHint": "点击「新增连接」配置一个 AMQP Broker。",
+    "dragHandleTitle": "拖拽以调整顺序",
+    "edit": "编辑",
+    "delete": "删除",
+    "deleteConfirmTitle": "移除连接",
+    "deleteConfirmDetail": "确认从已保存的连接中移除 \"{{name}}\" ({{host}})？\n\n此操作不可撤销。",
+    "deleteConfirmCancel": "取消",
+    "deleteConfirmAction": "移除"
+  },
+  "dialog": {
+    "addTitle": "新增 RabbitMQ 连接",
+    "editTitle": "编辑 RabbitMQ 连接",
+    "labelName": "显示名称",
+    "labelHost": "主机",
+    "labelAmqpPort": "AMQP 端口",
+    "labelMgmtPort": "Mgmt 端口",
+    "labelUsername": "用户名",
+    "labelPassword": "密码",
+    "labelVhost": "虚拟主机 (vhost)",
+    "labelTls": "TLS",
+    "labelTlsHint": "管理 API 同步使用 amqps + https",
+    "placeholderName": "例如：本地 RabbitMQ",
+    "testConnection": "测试连接",
+    "testing": "测试中…",
+    "testHint": "通过管理插件的 /api/overview 端点验证账号与端口。",
+    "testOk": "已连通（RabbitMQ {{version}})",
+    "cancel": "取消",
+    "save": "保存",
+    "saving": "保存中…"
+  },
+  "panel": {
+    "vhost": "vhost",
+    "allVhosts": "(全部)",
+    "refresh": "刷新",
+    "refreshing": "刷新中…",
+    "errorShort": "请求失败",
+    "loading": "加载中…",
+    "tab": {
+      "overview": "概览",
+      "queues": "队列",
+      "exchanges": "Exchange",
+      "bindings": "绑定",
+      "publish": "发布消息"
+    },
+    "empty": {
+      "title": "请选择一个连接",
+      "hint": "在左侧选中一个 Broker，即可查看其 Exchange、队列、绑定与消息。",
+      "usage": "查看使用指南"
+    }
+  },
+  "overview": {
+    "cluster": "集群",
+    "version": "版本",
+    "product": "产品",
+    "queues": "队列数",
+    "exchanges": "Exchange 数",
+    "connections": "AMQP 连接",
+    "consumers": "消费者",
+    "publishRate": "publish 速率 (msg/s)",
+    "deliverRate": "deliver_get 速率 (msg/s)"
+  },
+  "queues": {
+    "filterPlaceholder": "按队列名筛选…",
+    "count": "共 {{count}} 个队列",
+    "col": {
+      "name": "名称",
+      "vhost": "vhost",
+      "ready": "Ready",
+      "unacked": "Unacked",
+      "total": "总计",
+      "consumers": "消费者",
+      "state": "状态",
+      "actions": "操作"
+    },
+    "action": {
+      "peek": "查看",
+      "purge": "清空",
+      "delete": "删除"
+    },
+    "none": "暂无队列",
+    "purgeConfirmTitle": "清空队列",
+    "purgeConfirmDetail": "将清空队列 \"{{name}}\" 中的所有消息，操作不可撤销。",
+    "deleteConfirmTitle": "删除队列",
+    "deleteConfirmDetail": "将从 Broker 删除队列 \"{{name}}\"，操作不可撤销。",
+    "cancel": "取消"
+  },
+  "exchanges": {
+    "filterPlaceholder": "按 Exchange 名筛选…",
+    "count": "共 {{count}} 个 Exchange",
+    "col": {
+      "name": "名称",
+      "vhost": "vhost",
+      "type": "类型",
+      "flags": "属性"
+    },
+    "none": "暂无 Exchange"
+  },
+  "bindings": {
+    "filterPlaceholder": "按绑定筛选…",
+    "count": "共 {{count}} 条绑定",
+    "col": {
+      "source": "源 Exchange",
+      "destination": "目标",
+      "destinationType": "目标类型",
+      "routingKey": "路由键",
+      "vhost": "vhost"
+    },
+    "none": "暂无绑定"
+  },
+  "messages": {
+    "title": "查看队列消息 \"{{name}}\"",
+    "count": "数量",
+    "requeue": "读取后重新入队",
+    "requeueOffWarning": "已关闭 Requeue：拉取的消息将被丢弃（若配置了 DLX 则进入死信，否则永久丢失）。",
+    "fetch": "拉取",
+    "loading": "拉取中…",
+    "close": "关闭",
+    "empty": "尚未拉取消息。",
+    "exchange": "exchange",
+    "routingKey": "路由键"
+  },
+  "publish": {
+    "exchange": "Exchange",
+    "exchangePlaceholder": "(留空即使用 AMQP 默认 Exchange)",
+    "routingKey": "路由键",
+    "routingKeyPlaceholder": "使用默认 Exchange 时填写队列名",
+    "contentType": "Content-Type",
+    "persistent": "持久化 (delivery_mode=2)",
+    "body": "消息体",
+    "send": "发送",
+    "sending": "发送中…",
+    "success": "发布成功（含 publisher confirms）。",
+    "hint": "通过 lapin 发布并等待 publisher confirms；失败信息会显示在此处。"
+  },
+  "usage": {
+    "title": "快速上手",
+    "step1": "点击「新增连接」，填入主机 / 端口 / 账号。默认值与原生 Docker `rabbitmq:management` 镜像一致（guest/guest，5672/15672）。",
+    "step2": "「测试连接」调用管理插件的 /api/overview（端口 15672），用于验证凭据并确认管理插件已启用。",
+    "step3": "顶部切换 vhost 可限定查询范围；选择「(全部)」则查询所有 vhost。",
+    "step4": "查看消息使用 basic.get + reject(requeue=true)，不会改动 Broker 上的消息；如确实需要清空，请关闭 Requeue。",
+    "step5": "发布消息走 lapin + publisher confirms。默认 Exchange 会按路由键名称投递到同名队列。",
+    "close": "关闭",
+    "note": "AMQP 帧由 lapin 处理；拓扑读取与 purge/delete 通过 RabbitMQ Management HTTP API。"
+  }
+}

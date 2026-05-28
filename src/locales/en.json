@@ -1,0 +1,165 @@
+{
+  "lang": {
+    "en": "English",
+    "zh": "中文",
+    "switchToEn": "Switch to English",
+    "switchToZh": "Switch to Chinese"
+  },
+  "workspace": {
+    "tabLabel": "Workspace {{index}}",
+    "addTab": "New tab (same layout as current)",
+    "closeTab": "Close this workspace",
+    "tabListAria": "Workspace tabs"
+  },
+  "sidebar": {
+    "title": "Connections",
+    "subtitle": "Manage RabbitMQ brokers and inspect topology",
+    "addConnection": "Add connection",
+    "listHeading": "Brokers",
+    "loading": "Loading…",
+    "empty": "No connections configured",
+    "emptyHint": "Click “Add connection” to define an AMQP broker.",
+    "dragHandleTitle": "Drag to reorder",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Remove connection",
+    "deleteConfirmDetail": "Remove \"{{name}}\" ({{host}}) from saved connections?\n\nThis cannot be undone.",
+    "deleteConfirmCancel": "Cancel",
+    "deleteConfirmAction": "Remove"
+  },
+  "dialog": {
+    "addTitle": "Add RabbitMQ connection",
+    "editTitle": "Edit RabbitMQ connection",
+    "labelName": "Display name",
+    "labelHost": "Host",
+    "labelAmqpPort": "AMQP port",
+    "labelMgmtPort": "Mgmt port",
+    "labelUsername": "Username",
+    "labelPassword": "Password",
+    "labelVhost": "Virtual host",
+    "labelTls": "TLS",
+    "labelTlsHint": "Use amqps + https for management API",
+    "placeholderName": "e.g. Local RabbitMQ",
+    "testConnection": "Test connection",
+    "testing": "Testing…",
+    "testHint": "Test calls /api/overview against the management plugin.",
+    "testOk": "Connected (RabbitMQ {{version}})",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "panel": {
+    "vhost": "vhost",
+    "allVhosts": "(all)",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "errorShort": "Failed",
+    "loading": "Loading…",
+    "tab": {
+      "overview": "Overview",
+      "queues": "Queues",
+      "exchanges": "Exchanges",
+      "bindings": "Bindings",
+      "publish": "Publish"
+    },
+    "empty": {
+      "title": "Pick a connection",
+      "hint": "Select a broker on the left to explore its exchanges, queues, bindings, and messages.",
+      "usage": "Usage guide"
+    }
+  },
+  "overview": {
+    "cluster": "Cluster",
+    "version": "Version",
+    "product": "Product",
+    "queues": "Queues",
+    "exchanges": "Exchanges",
+    "connections": "AMQP connections",
+    "consumers": "Consumers",
+    "publishRate": "publish msg/s",
+    "deliverRate": "deliver_get msg/s"
+  },
+  "queues": {
+    "filterPlaceholder": "Filter queues by name…",
+    "count": "{{count}} queues",
+    "col": {
+      "name": "Name",
+      "vhost": "vhost",
+      "ready": "Ready",
+      "unacked": "Unacked",
+      "total": "Total",
+      "consumers": "Consumers",
+      "state": "State",
+      "actions": "Actions"
+    },
+    "action": {
+      "peek": "Peek",
+      "purge": "Purge",
+      "delete": "Delete"
+    },
+    "none": "No queues",
+    "purgeConfirmTitle": "Purge queue",
+    "purgeConfirmDetail": "Drop every message in \"{{name}}\". This cannot be undone.",
+    "deleteConfirmTitle": "Delete queue",
+    "deleteConfirmDetail": "Delete queue \"{{name}}\" from the broker. This cannot be undone.",
+    "cancel": "Cancel"
+  },
+  "exchanges": {
+    "filterPlaceholder": "Filter exchanges…",
+    "count": "{{count}} exchanges",
+    "col": {
+      "name": "Name",
+      "vhost": "vhost",
+      "type": "Type",
+      "flags": "Flags"
+    },
+    "none": "No exchanges"
+  },
+  "bindings": {
+    "filterPlaceholder": "Filter bindings…",
+    "count": "{{count}} bindings",
+    "col": {
+      "source": "Source",
+      "destination": "Destination",
+      "destinationType": "Type",
+      "routingKey": "Routing key",
+      "vhost": "vhost"
+    },
+    "none": "No bindings"
+  },
+  "messages": {
+    "title": "Peek messages in \"{{name}}\"",
+    "count": "Count",
+    "requeue": "Requeue after read",
+    "requeueOffWarning": "Requeue is OFF: fetched messages are dropped (sent to DLX if configured, otherwise lost).",
+    "fetch": "Fetch",
+    "loading": "Fetching…",
+    "close": "Close",
+    "empty": "No messages fetched yet.",
+    "exchange": "exchange",
+    "routingKey": "routing key"
+  },
+  "publish": {
+    "exchange": "Exchange",
+    "exchangePlaceholder": "(empty = AMQP default exchange)",
+    "routingKey": "Routing key",
+    "routingKeyPlaceholder": "queue name when using default exchange",
+    "contentType": "Content type",
+    "persistent": "Persistent (delivery_mode=2)",
+    "body": "Body",
+    "send": "Publish",
+    "sending": "Publishing…",
+    "success": "Published with publisher confirms.",
+    "hint": "Sent via lapin with publisher confirms — failure surfaces as an error here."
+  },
+  "usage": {
+    "title": "Getting started",
+    "step1": "Click “Add connection”, fill in host / port / credentials. Defaults match a vanilla Docker `rabbitmq:management` image (guest/guest, ports 5672/15672).",
+    "step2": "Use “Test connection” — it calls /api/overview via the management plugin (port 15672) to confirm credentials and that the management plugin is enabled.",
+    "step3": "Switch vhost on the top bar to scope topology lookups; the “(all)” option queries the unfiltered endpoints.",
+    "step4": "Peek pulls messages with basic.get + reject(requeue=true); your broker copy is unchanged. Turn requeue OFF if you intentionally want to drain.",
+    "step5": "Publish uses lapin with publisher confirms. The default AMQP exchange routes by queue name in the routing key.",
+    "close": "Close",
+    "note": "lapin handles AMQP framing; topology + purge/delete go through the RabbitMQ Management HTTP API."
+  }
+}

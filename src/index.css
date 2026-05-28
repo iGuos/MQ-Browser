@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    @apply m-0 h-full;
+  }
+
+  #root {
+    @apply select-none;
+  }
+
+  #root input,
+  #root textarea,
+  #root [contenteditable='true'],
+  #root pre,
+  #root code,
+  #root .mq-json-preview {
+    @apply select-text;
+  }
+
+  #root input::placeholder,
+  #root textarea::placeholder {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #root select {
+    @apply select-none;
+  }
+
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  button {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  .mq-json-preview {
+    font-family:
+      menlo,
+      consolas,
+      'ubuntu mono',
+      'liberation mono',
+      'courier new',
+      monospace;
+    font-size: 11px;
+    line-height: 14px;
+  }
+}
