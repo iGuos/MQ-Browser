@@ -11,6 +11,7 @@ import { BindingList } from './BindingList'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
+import { Select } from '@/components/Select'
 
 const TAB_ORDER: DetailTab[] = ['overview', 'queues', 'exchanges', 'bindings', 'publish']
 
@@ -76,25 +77,25 @@ export function TopologyPanel() {
             {selected.name || selected.host}
           </div>
           <div className="truncate font-mono text-[11px] text-zinc-500">
-            {selected.tls ? 'amqps' : 'amqp'}://{selected.host}:{selected.amqpPort} · mgmt:
-            {selected.mgmtPort}
+            {selected.tls ? 'https' : 'http'}://{selected.host}:{selected.mgmtPort}
+            {selected.amqpPort ? ` · amqp:${selected.amqpPort}` : ''}
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <label className="text-[11px] text-zinc-500 dark:text-zinc-500">{t('panel.vhost')}</label>
-          <select
+          <Select
             value={activeVhost ?? ''}
-            onChange={(e) => setActiveVhost(workspaceId, e.target.value || null)}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-white/10 dark:bg-zinc-900"
-          >
-            <option value="">{t('panel.allVhosts')}</option>
-            {vhosts.map((v) => (
-              <option key={v.name} value={v.name}>
-                {v.name === '/' ? '/ (default)' : v.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setActiveVhost(workspaceId, v || null)}
+            options={[
+              { value: '', label: t('panel.allVhosts') },
+              ...vhosts.map((v) => ({
+                value: v.name,
+                label: v.name === '/' ? '/ (default)' : v.name,
+              })),
+            ]}
+            className="min-w-[160px]"
+          />
           <button
             type="button"
             onClick={() => void fetchTopology(workspaceId, selected, activeVhost)}

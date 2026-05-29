@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ExchangeInfo, RabbitConnection } from '@shared/types'
 import { api } from '@/lib/tauri'
+import { Combobox } from '@/components/Select'
 
 type Slice = { exchanges: ExchangeInfo[] } | null
 
@@ -56,20 +57,17 @@ export function PublishDialog({
           <span className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             {t('publish.exchange')}
           </span>
-          <input
-            list="mq-exchange-list"
-            className={inputCls}
+          <Combobox
             value={exchange}
+            onChange={setExchange}
             placeholder={t('publish.exchangePlaceholder')}
-            onChange={(e) => setExchange(e.target.value)}
+            options={exchanges.map((x) => ({
+              value: x.name,
+              label: x.name || '(default)',
+              hint: `${x.type} · ${x.vhost}`,
+            }))}
+            inputClassName={inputCls}
           />
-          <datalist id="mq-exchange-list">
-            {exchanges.map((x) => (
-              <option key={`${x.vhost}::${x.name}`} value={x.name}>
-                {x.type} · {x.vhost}
-              </option>
-            ))}
-          </datalist>
         </label>
         <label className="block">
           <span className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -86,10 +84,11 @@ export function PublishDialog({
           <span className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             {t('publish.contentType')}
           </span>
-          <input
-            className={inputCls}
+          <Combobox
             value={contentType}
-            onChange={(e) => setContentType(e.target.value)}
+            onChange={setContentType}
+            options={CONTENT_TYPE_PRESETS}
+            inputClassName={inputCls}
           />
         </label>
         <label className="mt-5 inline-flex items-center gap-2 text-xs">
@@ -138,3 +137,14 @@ export function PublishDialog({
 
 const inputCls =
   'mt-1 w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm dark:border-white/10 dark:bg-zinc-900'
+
+// Free-form field; presets are just hints. Broker doesn't validate this.
+const CONTENT_TYPE_PRESETS = [
+  { value: 'application/json', label: 'application/json', hint: 'JSON text' },
+  { value: 'text/plain', label: 'text/plain', hint: 'Plain text' },
+  { value: 'application/xml', label: 'application/xml', hint: 'XML' },
+  { value: 'application/x-protobuf', label: 'application/x-protobuf', hint: 'Protobuf binary' },
+  { value: 'application/msgpack', label: 'application/msgpack', hint: 'MessagePack binary' },
+  { value: 'application/octet-stream', label: 'application/octet-stream', hint: 'Generic binary' },
+  { value: 'application/x-www-form-urlencoded', label: 'application/x-www-form-urlencoded', hint: 'Form data' },
+]
