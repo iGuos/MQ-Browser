@@ -3,6 +3,8 @@ import type {
   BindingInfo,
   ChannelInfo,
   ExchangeInfo,
+  NodeInfo,
+  PolicyInfo,
   QueueInfo,
   RabbitConnection,
   RuntimeConnection,
@@ -21,6 +23,8 @@ interface TopologySlice {
   bindings: BindingInfo[]
   runtimeConnections: RuntimeConnection[]
   channels: ChannelInfo[]
+  nodes: NodeInfo[]
+  policies: PolicyInfo[]
   /** Server overview (broker version, cluster name, etc.) */
   overview: Record<string, unknown> | null
 }
@@ -46,6 +50,8 @@ function emptySlice(): TopologySlice {
     bindings: [],
     runtimeConnections: [],
     channels: [],
+    nodes: [],
+    policies: [],
     overview: null,
   }
 }
@@ -70,16 +76,27 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     }))
     try {
       const targetVhost = vhost ?? undefined
-      const [overview, vhosts, queues, exchanges, bindings, runtimeConnections, channels] =
-        await Promise.all([
-          api.testConnection(connection).catch(() => null),
-          api.listVhosts(connection).catch(() => [] as VhostInfo[]),
-          api.listQueues(connection, targetVhost),
-          api.listExchanges(connection, targetVhost),
-          api.listBindings(connection, targetVhost),
-          api.listRuntimeConnections(connection, targetVhost).catch(() => []),
-          api.listChannels(connection, targetVhost).catch(() => []),
-        ])
+      const [
+        overview,
+        vhosts,
+        queues,
+        exchanges,
+        bindings,
+        runtimeConnections,
+        channels,
+        nodes,
+        policies,
+      ] = await Promise.all([
+        api.testConnection(connection).catch(() => null),
+        api.listVhosts(connection).catch(() => [] as VhostInfo[]),
+        api.listQueues(connection, targetVhost),
+        api.listExchanges(connection, targetVhost),
+        api.listBindings(connection, targetVhost),
+        api.listRuntimeConnections(connection, targetVhost).catch(() => []),
+        api.listChannels(connection, targetVhost).catch(() => []),
+        api.listNodes(connection).catch(() => []),
+        api.listPolicies(connection, targetVhost).catch(() => []),
+      ])
       set((s) => ({
         byKey: {
           ...s.byKey,
@@ -93,6 +110,8 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
             bindings,
             runtimeConnections,
             channels,
+            nodes,
+            policies,
           },
         },
       }))

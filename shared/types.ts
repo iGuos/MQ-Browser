@@ -30,6 +30,8 @@ export interface QueueInfo {
   exclusive: boolean
   state: string
   node: string
+  /** Raw arguments map from RabbitMQ (e.g. x-dead-letter-exchange). */
+  arguments?: Record<string, unknown>
 }
 
 export interface ExchangeInfo {
@@ -81,6 +83,43 @@ export interface ChannelInfo {
   prefetchCount: number
   state: string
   connectionDetails: Record<string, unknown>
+}
+
+export interface NodeInfo {
+  name: string
+  kind: string
+  running: boolean
+  memUsed: number
+  memLimit: number
+  fdUsed: number
+  fdTotal: number
+  socketsUsed: number
+  socketsTotal: number
+  diskFree: number
+  diskFreeLimit: number
+  procUsed: number
+  procTotal: number
+  /** Milliseconds since broker startup. */
+  uptime: number
+}
+
+export interface PolicyInfo {
+  vhost: string
+  name: string
+  pattern: string
+  /** all | queues | exchanges | classic_queues | quorum_queues | streams */
+  applyTo: string
+  priority: number
+  definition: Record<string, unknown>
+}
+
+export interface PolicySpec {
+  vhost: string
+  name: string
+  pattern: string
+  applyTo: string
+  priority: number
+  definition: Record<string, unknown>
 }
 
 export interface QueueSpec {
@@ -151,4 +190,6 @@ export type DetailTab =
   | 'bindings'
   | 'connections'
   | 'channels'
+  | 'nodes'
+  | 'policies'
   | 'publish'

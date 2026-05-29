@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next'
 import type { RabbitConnection, RuntimeConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { toast } from '@/stores/toastStore'
 
 type Slice =
   | {
@@ -19,6 +23,9 @@ export function ConnectionList({
   slice: Slice
 }) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
   const [confirmClose, setConfirmClose] = useState<RuntimeConnection | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -135,6 +142,8 @@ export function ConnectionList({
           if (!target) return
           try {
             await api.closeRuntimeConnection(connection, target.name, 'Closed via MQ Browser')
+            toast.success(t('connections.action.close') + ' ' + target.name)
+            void fetchTopology(workspaceId, connection, activeVhost)
           } catch (e) {
             setError(e instanceof Error ? e.message : String(e))
           }

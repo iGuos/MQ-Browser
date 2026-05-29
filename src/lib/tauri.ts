@@ -5,7 +5,10 @@ import type {
   ChannelInfo,
   ExchangeInfo,
   ExchangeSpec,
+  NodeInfo,
   PeekedMessage,
+  PolicyInfo,
+  PolicySpec,
   PublishPayload,
   PublishTemplate,
   QueueInfo,
@@ -82,4 +85,30 @@ export const api = {
   listPublishTemplates: () => invoke<PublishTemplate[]>('list_publish_templates'),
   savePublishTemplates: (templates: PublishTemplate[]) =>
     invoke<void>('save_publish_templates', { templates }),
+
+  // Cluster / policies / channels / definitions ----------------------------
+  listNodes: (connection: RabbitConnection) => invoke<NodeInfo[]>('list_nodes', { connection }),
+  listPolicies: (connection: RabbitConnection, vhost?: string | null) =>
+    invoke<PolicyInfo[]>('list_policies', { connection, vhost: vhost ?? null }),
+  createPolicy: (connection: RabbitConnection, spec: PolicySpec) =>
+    invoke<void>('create_policy', { connection, spec }),
+  deletePolicy: (connection: RabbitConnection, vhost: string, name: string) =>
+    invoke<void>('delete_policy', { connection, vhost, name }),
+  closeChannel: (connection: RabbitConnection, name: string, reason?: string) =>
+    invoke<void>('close_channel', { connection, name, reason: reason ?? null }),
+  exportDefinitions: (connection: RabbitConnection, vhost?: string | null) =>
+    invoke<Record<string, unknown>>('export_definitions', {
+      connection,
+      vhost: vhost ?? null,
+    }),
+  importDefinitions: (
+    connection: RabbitConnection,
+    definitions: Record<string, unknown>,
+    vhost?: string | null,
+  ) =>
+    invoke<void>('import_definitions', {
+      connection,
+      definitions,
+      vhost: vhost ?? null,
+    }),
 }

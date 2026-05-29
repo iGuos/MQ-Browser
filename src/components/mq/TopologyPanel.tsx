@@ -10,6 +10,8 @@ import { ExchangeList } from './ExchangeList'
 import { BindingList } from './BindingList'
 import { ConnectionList } from './ConnectionList'
 import { ChannelList } from './ChannelList'
+import { NodeList } from './NodeList'
+import { PolicyList } from './PolicyList'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
@@ -23,6 +25,8 @@ const TAB_ORDER: DetailTab[] = [
   'bindings',
   'connections',
   'channels',
+  'nodes',
+  'policies',
   'publish',
 ]
 
@@ -178,7 +182,11 @@ export function TopologyPanel() {
         ) : detailTab === 'connections' ? (
           <ConnectionList connection={selected} slice={slice ?? null} />
         ) : detailTab === 'channels' ? (
-          <ChannelList slice={slice ?? null} />
+          <ChannelList connection={selected} slice={slice ?? null} />
+        ) : detailTab === 'nodes' ? (
+          <NodeList slice={slice ?? null} />
+        ) : detailTab === 'policies' ? (
+          <PolicyList connection={selected} slice={slice ?? null} />
         ) : (
           <PublishDialog connection={selected} vhost={activeVhost} slice={slice ?? null} />
         )}

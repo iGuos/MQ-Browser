@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ChannelInfo } from '@shared/types'
+import type { ChannelInfo, RabbitConnection } from '@shared/types'
+import { Modal } from '@/components/Modal'
+import { api } from '@/lib/tauri'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { toast } from '@/stores/toastStore'
 
 type Slice =
   | {
@@ -9,9 +15,19 @@ type Slice =
     }
   | null
 
-export function ChannelList({ slice }: { slice: Slice }) {
+export function ChannelList({
+  slice,
+  connection,
+}: {
+  slice: Slice
+  connection: RabbitConnection
+}) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
+  const [confirmClose, setConfirmClose] = useState<ChannelInfo | null>(null)
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -55,6 +71,7 @@ export function ChannelList({ slice }: { slice: Slice }) {
               <Th align="right">{t('channels.col.unconfirmed')}</Th>
               <Th align="right">{t('channels.col.prefetch')}</Th>
               <Th>{t('channels.col.state')}</Th>
+              <Th align="right">{t('queues.col.actions')}</Th>
             </tr>
           </thead>
           <tbody>
@@ -87,11 +104,20 @@ export function ChannelList({ slice }: { slice: Slice }) {
                     {c.state || '-'}
                   </span>
                 </Td>
+                <Td align="right">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClose(c)}
+                    className="rounded-md border border-red-400/50 px-2 py-0.5 text-[10px] text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                  >
+                    {t('connections.action.close')}
+                  </button>
+                </Td>
               </tr>
             ))}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={9} className="px-3 py-6 text-center text-zinc-500">
                   {t('channels.none')}
                 </td>
               </tr>
@@ -99,6 +125,28 @@ export function ChannelList({ slice }: { slice: Slice }) {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        open={confirmClose !== null}
+        title={t('channels.closeConfirmTitle')}
+        cancelText={t('queues.cancel')}
+        okText={t('connections.action.close')}
+        onCancel={() => setConfirmClose(null)}
+        onOk={async () => {
+          const target = confirmClose
+          setConfirmClose(null)
+          if (!target) return
+          try {
+            await api.closeChannel(connection, target.name, 'Closed via MQ Browser')
+            toast.success(t('channels.closed', { name: target.name }))
+            void fetchTopology(workspaceId, connection, activeVhost)
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : String(e))
+          }
+        }}
+      >
+        {t('channels.closeConfirmDetail', { name: confirmClose?.name ?? '' })}
+      </Modal>
     </div>
   )
 }

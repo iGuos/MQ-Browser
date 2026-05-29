@@ -6,6 +6,7 @@ import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { toast } from '@/stores/toastStore'
 import { MessageViewer } from './MessageViewer'
 import { CreateQueueDialog } from './CreateQueueDialog'
 
@@ -34,6 +35,18 @@ export function QueueList({
   const [confirmPurge, setConfirmPurge] = useState<QueueInfo | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<QueueInfo | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState<null | 'purge' | 'delete'>(null)
+
+  const keyOf = (q: QueueInfo) => `${q.vhost}::${q.name}`
+  const toggle = (q: QueueInfo) =>
+    setSelected((s) => {
+      const next = new Set(s)
+      const k = keyOf(q)
+      if (next.has(k)) next.delete(k)
+      else next.add(k)
+      return next
+    })
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -60,6 +73,34 @@ export function QueueList({
         <span className="text-[11px] text-zinc-500">
           {t('queues.count', { count: filtered.length })}
         </span>
+        {selected.size > 0 ? (
+          <>
+            <span className="text-[11px] text-zinc-500">
+              {t('queues.batch.selected', { count: selected.size })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setBulkConfirm('purge')}
+              className="rounded-md border border-amber-400/60 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+            >
+              {t('queues.batch.purge')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkConfirm('delete')}
+              className="rounded-md border border-red-400/60 px-2 py-1 text-[11px] text-red-600 hover:bg-red-500/10 dark:text-red-400"
+            >
+              {t('queues.batch.delete')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] text-zinc-600 dark:border-white/10 dark:text-zinc-300"
+            >
+              {t('queues.batch.clear')}
+            </button>
+          </>
+        ) : null}
         <button
           type="button"
           onClick={() => setShowCreate(true)}
@@ -73,6 +114,17 @@ export function QueueList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
+              <th className="w-8 px-2">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && filtered.every((q) => selected.has(keyOf(q)))}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelected(new Set(filtered.map(keyOf)))
+                    else setSelected(new Set())
+                  }}
+                  aria-label="Select all"
+                />
+              </th>
               <Th>{t('queues.col.name')}</Th>
               <Th>{t('queues.col.vhost')}</Th>
               <Th align="right">{t('queues.col.ready')}</Th>
@@ -89,12 +141,30 @@ export function QueueList({
                 key={`${q.vhost}::${q.name}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
               >
+                <td className="px-2 align-middle">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(keyOf(q))}
+                    onChange={() => toggle(q)}
+                    aria-label={`Select ${q.name}`}
+                  />
+                </td>
                 <Td>
                   <span className="font-mono text-zinc-900 dark:text-zinc-100">{q.name}</span>
-                  <div className="mt-0.5 flex gap-1">
+                  <div className="mt-0.5 flex flex-wrap gap-1">
                     {q.durable ? <Badge>durable</Badge> : null}
                     {q.autoDelete ? <Badge>auto-delete</Badge> : null}
                     {q.exclusive ? <Badge>exclusive</Badge> : null}
+                    {q.arguments && (q.arguments as Record<string, unknown>)['x-dead-letter-exchange'] ? (
+                      <Badge tone="warn">
+                        DLQ → {String((q.arguments as Record<string, unknown>)['x-dead-letter-exchange'])}
+                      </Badge>
+                    ) : null}
+                    {q.arguments && (q.arguments as Record<string, unknown>)['x-message-ttl'] ? (
+                      <Badge tone="info">
+                        TTL {String((q.arguments as Record<string, unknown>)['x-message-ttl'])}ms
+                      </Badge>
+                    ) : null}
                   </div>
                 </Td>
                 <Td>
@@ -124,7 +194,7 @@ export function QueueList({
             ))}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={9} className="px-3 py-6 text-center text-zinc-500">
                   {t('queues.none')}
                 </td>
               </tr>
@@ -150,7 +220,13 @@ export function QueueList({
           const target = confirmPurge
           setConfirmPurge(null)
           if (!target) return
-          await api.purgeQueue(connection, target.vhost, target.name)
+          try {
+            await api.purgeQueue(connection, target.vhost, target.name)
+            toast.success(t('queues.action.purge') + ' ' + target.name)
+            void fetchTopology(workspaceId, connection, activeVhost)
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : String(e))
+          }
         }}
       >
         {t('queues.purgeConfirmDetail', { name: confirmPurge?.name ?? '' })}
@@ -166,7 +242,13 @@ export function QueueList({
           const target = confirmDelete
           setConfirmDelete(null)
           if (!target) return
-          await api.deleteQueue(connection, target.vhost, target.name)
+          try {
+            await api.deleteQueue(connection, target.vhost, target.name)
+            toast.success(t('queues.action.delete') + ' ' + target.name)
+            void fetchTopology(workspaceId, connection, activeVhost)
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : String(e))
+          }
         }}
       >
         {t('queues.deleteConfirmDetail', { name: confirmDelete?.name ?? '' })}
@@ -180,6 +262,42 @@ export function QueueList({
         onClose={() => setShowCreate(false)}
         onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
       />
+
+      <Modal
+        open={bulkConfirm !== null}
+        title={
+          bulkConfirm === 'delete'
+            ? t('queues.batch.deleteConfirmTitle')
+            : t('queues.batch.purgeConfirmTitle')
+        }
+        cancelText={t('queues.cancel')}
+        okText={bulkConfirm === 'delete' ? t('queues.action.delete') : t('queues.action.purge')}
+        onCancel={() => setBulkConfirm(null)}
+        onOk={async () => {
+          const op = bulkConfirm
+          setBulkConfirm(null)
+          if (!op) return
+          const list = (slice?.queues ?? []).filter((q) => selected.has(keyOf(q)))
+          let ok = 0
+          let fail = 0
+          for (const q of list) {
+            try {
+              if (op === 'delete') await api.deleteQueue(connection, q.vhost, q.name)
+              else await api.purgeQueue(connection, q.vhost, q.name)
+              ok++
+            } catch (e) {
+              fail++
+              toast.error(`${q.name}: ${e instanceof Error ? e.message : String(e)}`)
+            }
+          }
+          setSelected(new Set())
+          if (fail === 0) toast.success(t('queues.batch.done', { count: ok }))
+          else toast.warning(t('queues.batch.partial', { ok, fail }))
+          void fetchTopology(workspaceId, connection, activeVhost)
+        }}
+      >
+        {t('queues.batch.confirmDetail', { count: selected.size })}
+      </Modal>
     </div>
   )
 }
@@ -200,9 +318,21 @@ function Td({ children, align }: { children: React.ReactNode; align?: 'right' })
   )
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
+function Badge({
+  children,
+  tone = 'neutral',
+}: {
+  children: React.ReactNode
+  tone?: 'neutral' | 'warn' | 'info'
+}) {
+  const cls =
+    tone === 'warn'
+      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+      : tone === 'info'
+        ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'
+        : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
   return (
-    <span className="inline-flex items-center rounded bg-zinc-200/80 px-1 py-0 text-[9px] uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+    <span className={`inline-flex items-center rounded px-1 py-0 text-[9px] uppercase tracking-wide ${cls}`}>
       {children}
     </span>
   )

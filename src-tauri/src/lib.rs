@@ -2,7 +2,7 @@ mod commands;
 mod error;
 mod types;
 
-use commands::{connections, management, messages};
+use commands::{connections, files, management, messages};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -25,6 +25,9 @@ pub fn run() {
             connections::save_connections,
             connections::list_publish_templates,
             connections::save_publish_templates,
+            // file io
+            files::write_text_file,
+            files::read_text_file,
             // management api (HTTP)
             management::test_connection,
             management::list_vhosts,
@@ -40,6 +43,13 @@ pub fn run() {
             management::create_queue,
             management::create_exchange,
             management::create_binding,
+            management::list_nodes,
+            management::list_policies,
+            management::create_policy,
+            management::delete_policy,
+            management::close_channel,
+            management::export_definitions,
+            management::import_definitions,
             // messages (over management HTTP)
             messages::peek_messages,
             messages::publish_message,

@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { save } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 import type { PeekedMessage, QueueInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
+import { toast } from '@/stores/toastStore'
+import { MessageBodyViewer } from './MessageBodyViewer'
 
 export function MessageViewer({
   open,
@@ -21,13 +25,21 @@ export function MessageViewer({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [messages, setMessages] = useState<PeekedMessage[]>([])
+  const [tail, setTail] = useState(false)
+  const [tailIntervalMs, setTailIntervalMs] = useState(2000)
+  const tailRef = useRef({ tail: false, tailIntervalMs: 2000, queue: null as QueueInfo | null })
 
   useEffect(() => {
     if (open) {
       setMessages([])
       setError(null)
+      setTail(false)
     }
   }, [open, queue?.name])
+
+  useEffect(() => {
+    tailRef.current = { tail, tailIntervalMs, queue }
+  }, [tail, tailIntervalMs, queue])
 
   const fetchMessages = async () => {
     if (!queue) return
@@ -43,8 +55,62 @@ export function MessageViewer({
     }
   }
 
+  // Live tail: peek the queue every tick with requeue=true so messages stay.
+  useEffect(() => {
+    if (!tail) return
+    let cancelled = false
+    const tick = async () => {
+      const cur = tailRef.current
+      if (cancelled || !cur.queue) return
+      try {
+        const res = await api.peekMessages(connection, cur.queue.vhost, cur.queue.name, count, true)
+        if (!cancelled) {
+          setMessages(res)
+          setError(null)
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      }
+    }
+    void tick()
+    const id = window.setInterval(() => void tick(), tailIntervalMs)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [tail, tailIntervalMs, connection, count])
+
+  const exportMessages = async () => {
+    if (messages.length === 0) return
+    try {
+      const path = await save({
+        defaultPath: `${queue?.name ?? 'messages'}.ndjson`,
+        filters: [
+          { name: 'NDJSON', extensions: ['ndjson'] },
+          { name: 'JSON', extensions: ['json'] },
+        ],
+      })
+      if (!path) return
+      const ext = path.toLowerCase().endsWith('.json') ? 'json' : 'ndjson'
+      const content =
+        ext === 'json'
+          ? JSON.stringify(messages, null, 2)
+          : messages.map((m) => JSON.stringify(m)).join('\n')
+      await invoke('write_text_file', { path, contents: content })
+      toast.success(t('messages.exported', { count: messages.length }))
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   return (
-    <Modal open={open} size="lg" title={queue ? t('messages.title', { name: queue.name }) : ''} cancelText={t('messages.close')} onCancel={onClose}>
+    <Modal
+      open={open}
+      size="lg"
+      title={queue ? t('messages.title', { name: queue.name }) : ''}
+      cancelText={t('messages.close')}
+      onCancel={onClose}
+    >
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-xs">
@@ -63,19 +129,48 @@ export function MessageViewer({
               type="checkbox"
               checked={requeue}
               onChange={(e) => setRequeue(e.target.checked)}
+              disabled={tail}
             />
             {t('messages.requeue')}
           </label>
-          <button
-            type="button"
-            onClick={fetchMessages}
-            disabled={loading}
-            className="ml-auto rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 px-3 py-1.5 text-xs font-medium text-zinc-950 disabled:opacity-50"
-          >
-            {loading ? t('messages.loading') : t('messages.fetch')}
-          </button>
+          <label className="inline-flex items-center gap-1 text-xs">
+            <input type="checkbox" checked={tail} onChange={(e) => setTail(e.target.checked)} />
+            {t('messages.tail')}
+          </label>
+          {tail ? (
+            <label className="text-[11px] text-zinc-500">
+              <select
+                value={tailIntervalMs}
+                onChange={(e) => setTailIntervalMs(Number(e.target.value))}
+                className="ml-1 rounded border border-zinc-300 bg-white px-1 py-0.5 dark:border-white/10 dark:bg-zinc-900"
+              >
+                <option value={1000}>1s</option>
+                <option value={2000}>2s</option>
+                <option value={5000}>5s</option>
+              </select>
+            </label>
+          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            {messages.length > 0 ? (
+              <button
+                type="button"
+                onClick={exportMessages}
+                className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:border-cyan-400/50 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-300"
+              >
+                {t('messages.export')}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={fetchMessages}
+              disabled={loading || tail}
+              className="rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 px-3 py-1.5 text-xs font-medium text-zinc-950 disabled:opacity-50"
+            >
+              {loading ? t('messages.loading') : t('messages.fetch')}
+            </button>
+          </div>
         </div>
-        {!requeue ? (
+        {!requeue && !tail ? (
           <div className="rounded-lg border border-amber-400/50 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-300">
             {t('messages.requeueOffWarning')}
           </div>
@@ -85,37 +180,36 @@ export function MessageViewer({
             {error}
           </div>
         ) : null}
-        <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-zinc-200 dark:border-white/[0.06]">
+        <div className="max-h-[55vh] space-y-2 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="px-3 py-6 text-center text-xs text-zinc-500">
+            <div className="rounded-lg border border-zinc-200 px-3 py-6 text-center text-xs text-zinc-500 dark:border-white/[0.06]">
               {t('messages.empty')}
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-white/[0.04]">
-              {messages.map((m, idx) => (
-                <li key={idx} className="px-3 py-2">
-                  <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
-                    <span className="rounded bg-zinc-200/80 px-1 py-0 dark:bg-zinc-800">
-                      #{idx + 1}
+            messages.map((m, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-white/[0.06]"
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                  <span className="rounded bg-zinc-200/80 px-1 py-0 dark:bg-zinc-800">
+                    #{idx + 1}
+                  </span>
+                  <span>
+                    {t('messages.exchange')}: <code>{m.exchange || '(default)'}</code>
+                  </span>
+                  <span>
+                    {t('messages.routingKey')}: <code>{m.routingKey || '—'}</code>
+                  </span>
+                  {m.redelivered ? (
+                    <span className="rounded bg-amber-500/20 px-1 py-0 text-amber-700 dark:text-amber-300">
+                      redelivered
                     </span>
-                    <span>
-                      {t('messages.exchange')}: <code>{m.exchange || '(default)'}</code>
-                    </span>
-                    <span>
-                      {t('messages.routingKey')}: <code>{m.routingKey || '—'}</code>
-                    </span>
-                    {m.redelivered ? (
-                      <span className="rounded bg-amber-500/20 px-1 py-0 text-amber-700 dark:text-amber-300">
-                        redelivered
-                      </span>
-                    ) : null}
-                  </div>
-                  <pre className="mq-json-preview overflow-x-auto rounded bg-zinc-50 p-2 text-[11px] text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-{m.bodyText ?? `(binary, base64: ${m.bodyBase64.slice(0, 120)}…)`}
-                  </pre>
-                </li>
-              ))}
-            </ul>
+                  ) : null}
+                </div>
+                <MessageBodyViewer bodyText={m.bodyText} bodyBase64={m.bodyBase64} />
+              </div>
+            ))
           )}
         </div>
       </div>

@@ -4,6 +4,9 @@ import { ConnectionSidebar } from '@/components/mq/ConnectionSidebar'
 import { ConnectionDialog } from '@/components/mq/ConnectionDialog'
 import { TopologyPanel } from '@/components/mq/TopologyPanel'
 import { WorkspaceTabBar } from '@/components/workspace/WorkspaceTabBar'
+import { ToastViewport } from '@/components/ToastViewport'
+import { CommandPalette } from '@/components/CommandPalette'
+import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts'
 import { WorkspaceProvider } from '@/context/WorkspaceContext'
 import { useConnectionsStore } from '@/stores/connectionsStore'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
@@ -34,6 +37,9 @@ export default function App() {
   const workspaceOrder = useWorkspaceUiStore((s) => s.workspaceOrder)
   const activeWorkspaceId = useWorkspaceUiStore((s) => s.activeWorkspaceId)
   const multiTab = workspaceOrder.length > 1
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  useGlobalShortcuts({ onOpenPalette: () => setPaletteOpen(true) })
 
   useEffect(() => {
     void hydrate()
@@ -78,6 +84,8 @@ export default function App() {
         source={dialog?.source ?? null}
         onClose={() => setDialog(null)}
       />
+      <ToastViewport />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   )
 }

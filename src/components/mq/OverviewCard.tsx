@@ -1,5 +1,9 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ExchangeInfo, QueueInfo, RabbitConnection } from '@shared/types'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { DefinitionsDialog } from './DefinitionsDialog'
 
 type Slice =
   | {
@@ -18,6 +22,9 @@ export function OverviewCard({
   connection: RabbitConnection
 }) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const [showDefs, setShowDefs] = useState(false)
   if (!slice || slice.status === 'loading') {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
   }
@@ -27,7 +34,17 @@ export function OverviewCard({
   const counts = ov.object_totals as Record<string, number> | undefined
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowDefs(true)}
+          className="rounded-md border border-zinc-300 px-2.5 py-1 text-[11px] text-zinc-600 hover:border-cyan-400/50 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-300"
+        >
+          {t('definitions.openBtn')}
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
       <Stat label={t('overview.cluster')} value={String(ov.cluster_name ?? '—')} />
       <Stat label={t('overview.version')} value={String(ov.rabbitmq_version ?? '—')} />
       <Stat label={t('overview.product')} value={String(ov.product_name ?? 'RabbitMQ')} />
@@ -41,11 +58,23 @@ export function OverviewCard({
       <Stat label={t('overview.publishRate')} value={String(stat?.publish ?? '—')} />
       <Stat label={t('overview.deliverRate')} value={String(stat?.deliver_get ?? '—')} />
       <div className="col-span-2 mt-2 rounded-xl border border-zinc-200 bg-white p-3 text-[11px] font-mono text-zinc-600 dark:border-white/[0.06] dark:bg-zinc-900 dark:text-zinc-400 lg:col-span-3">
-        amqp_uri: {connection.tls ? 'amqps' : 'amqp'}://{connection.username}@{connection.host}:
-        {connection.amqpPort}/{connection.vhost.replace(/^\//, '') || '%2F'}
-        <br />
         mgmt_api: {connection.tls ? 'https' : 'http'}://{connection.host}:{connection.mgmtPort}/api
+        {connection.amqpPort ? (
+          <>
+            <br />
+            amqp (recorded only): {connection.tls ? 'amqps' : 'amqp'}://{connection.host}:
+            {connection.amqpPort}
+          </>
+        ) : null}
       </div>
+      </div>
+
+      <DefinitionsDialog
+        open={showDefs}
+        connection={connection}
+        vhost={activeVhost}
+        onClose={() => setShowDefs(false)}
+      />
     </div>
   )
 }

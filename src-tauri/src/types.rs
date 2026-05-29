@@ -64,6 +64,9 @@ pub struct QueueInfo {
     pub state: String,
     #[serde(default)]
     pub node: String,
+    /// `x-message-ttl`, `x-dead-letter-exchange`, etc. surfaced for the UI.
+    #[serde(default)]
+    pub arguments: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -126,6 +129,57 @@ pub struct RuntimeConnection {
     pub connected_at: u64,
     #[serde(default, alias = "client_properties")]
     pub client_properties: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeInfo {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, alias = "type")]
+    pub kind: String,
+    #[serde(default)]
+    pub running: bool,
+    #[serde(default, alias = "mem_used")]
+    pub mem_used: u64,
+    #[serde(default, alias = "mem_limit")]
+    pub mem_limit: u64,
+    #[serde(default, alias = "fd_used")]
+    pub fd_used: u64,
+    #[serde(default, alias = "fd_total")]
+    pub fd_total: u64,
+    #[serde(default, alias = "sockets_used")]
+    pub sockets_used: u64,
+    #[serde(default, alias = "sockets_total")]
+    pub sockets_total: u64,
+    #[serde(default, alias = "disk_free")]
+    pub disk_free: u64,
+    #[serde(default, alias = "disk_free_limit")]
+    pub disk_free_limit: u64,
+    #[serde(default, alias = "proc_used")]
+    pub proc_used: u64,
+    #[serde(default, alias = "proc_total")]
+    pub proc_total: u64,
+    #[serde(default, alias = "uptime")]
+    pub uptime: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PolicyInfo {
+    #[serde(default)]
+    pub vhost: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub pattern: String,
+    /// "all" | "queues" | "exchanges" | "classic_queues" | "quorum_queues" | "streams"
+    #[serde(default, alias = "apply-to", rename = "applyTo")]
+    pub apply_to: String,
+    #[serde(default)]
+    pub priority: i32,
+    #[serde(default)]
+    pub definition: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

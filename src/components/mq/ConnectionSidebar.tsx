@@ -1,12 +1,38 @@
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
+import { save, open as openDialog } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 import type { RabbitConnection } from '@shared/types'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Modal } from '@/components/Modal'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useConnectionsStore } from '@/stores/connectionsStore'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { toast } from '@/stores/toastStore'
+
+type HealthStatus = 'idle' | 'loading' | 'ok' | 'error'
+
+function pickHealth(byKey: Record<string, { status: HealthStatus }>, connId: string): HealthStatus {
+  // The same connection may have several slices keyed by (workspace, vhost).
+  // We surface the "best" status — green if any slice succeeded recently.
+  let best: HealthStatus = 'idle'
+  const rank: Record<HealthStatus, number> = { idle: 0, loading: 1, error: 2, ok: 3 }
+  for (const k of Object.keys(byKey)) {
+    if (!k.includes(`::${connId}::`)) continue
+    const s = byKey[k]!.status
+    if (rank[s] > rank[best]) best = s
+  }
+  return best
+}
+
+const HEALTH_DOT: Record<HealthStatus, string> = {
+  idle: 'bg-zinc-400/60 dark:bg-zinc-600',
+  loading: 'bg-amber-400 animate-pulse',
+  ok: 'bg-emerald-500',
+  error: 'bg-red-500',
+}
 
 interface ConnectionSidebarProps {
   onAdd: () => void
@@ -16,15 +42,18 @@ interface ConnectionSidebarProps {
 export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
-  const { connections, removeConnection, reorderConnections, ready } = useConnectionsStore(
-    useShallow((s) => ({
-      connections: s.connections,
-      ready: s.ready,
-      removeConnection: s.removeConnection,
-      reorderConnections: s.reorderConnections,
-    })),
-  )
+  const { connections, removeConnection, reorderConnections, replaceAll, ready } =
+    useConnectionsStore(
+      useShallow((s) => ({
+        connections: s.connections,
+        ready: s.ready,
+        removeConnection: s.removeConnection,
+        reorderConnections: s.reorderConnections,
+        replaceAll: s.replaceAll,
+      })),
+    )
   const selectedId = useWorkspaceUiStore((s) => s.selectedConnByWs[workspaceId] ?? null)
+  const topologyByKey = useTopologyStore((s) => s.byKey)
   const select = useCallback(
     (id: string | null) => {
       useWorkspaceUiStore.getState().setSelectedForWorkspace(workspaceId, id)
@@ -102,6 +131,55 @@ export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
             <span className="text-lg leading-none">+</span>
             {t('sidebar.addConnection')}
           </button>
+          <div className="mt-2 flex gap-2 text-[10px]">
+            <button
+              type="button"
+              onClick={async () => {
+                if (connections.length === 0) return
+                try {
+                  const path = await save({
+                    defaultPath: 'mq-browser-connections.json',
+                    filters: [{ name: 'JSON', extensions: ['json'] }],
+                  })
+                  if (!path) return
+                  // Don't strip the password — but warn the user via a toast
+                  // before they share the file.
+                  await invoke('write_text_file', {
+                    path,
+                    contents: JSON.stringify(connections, null, 2),
+                  })
+                  toast.warning(t('sidebar.exportWarn'), t('sidebar.exported'))
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : String(e))
+                }
+              }}
+              className="flex-1 rounded-md border border-zinc-300 px-2 py-1 text-zinc-600 hover:border-cyan-400/40 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-300"
+            >
+              {t('sidebar.export')}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const path = await openDialog({
+                    multiple: false,
+                    filters: [{ name: 'JSON', extensions: ['json'] }],
+                  })
+                  if (typeof path !== 'string') return
+                  const text = await invoke<string>('read_text_file', { path })
+                  const list = JSON.parse(text) as RabbitConnection[]
+                  if (!Array.isArray(list)) throw new Error('not an array')
+                  await replaceAll(list)
+                  toast.success(t('sidebar.imported', { count: list.length }))
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : String(e))
+                }
+              }}
+              className="flex-1 rounded-md border border-zinc-300 px-2 py-1 text-zinc-600 hover:border-cyan-400/40 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-300"
+            >
+              {t('sidebar.import')}
+            </button>
+          </div>
         </div>
 
         <div className="px-3 pt-2 pb-0.5">
@@ -169,11 +247,18 @@ export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
                             onDragEnd={onRowDragEnd}
                             className="min-w-0 flex-1 cursor-pointer touch-none select-none px-3 py-2.5 text-left"
                           >
-                            <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                              {c.name}
+                            <div className="flex items-center gap-2">
+                              <span
+                                title={t(`sidebar.health.${pickHealth(topologyByKey, c.id)}`)}
+                                className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[pickHealth(topologyByKey, c.id)]}`}
+                                aria-hidden
+                              />
+                              <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                {c.name}
+                              </div>
                             </div>
                             <div className="mt-0.5 truncate font-mono text-[11px] text-zinc-500">
-                              {c.tls ? 'amqps' : 'amqp'}://{c.username}@{c.host}:{c.amqpPort}
+                              {c.tls ? 'https' : 'http'}://{c.username}@{c.host}:{c.mgmtPort}
                               {c.vhost === '/' ? '/' : `/${c.vhost.replace(/^\//, '')}`}
                             </div>
                           </button>

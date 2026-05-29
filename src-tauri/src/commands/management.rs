@@ -8,8 +8,8 @@
 
 use crate::error::{AppError, AppResult};
 use crate::types::{
-    BindingInfo, ChannelInfo, ExchangeInfo, QueueInfo, RabbitConnection, RuntimeConnection,
-    VhostInfo,
+    BindingInfo, ChannelInfo, ExchangeInfo, NodeInfo, PolicyInfo, QueueInfo, RabbitConnection,
+    RuntimeConnection, VhostInfo,
 };
 use reqwest::Client;
 use serde::Deserialize;
@@ -381,6 +381,158 @@ pub async fn delete_exchange(
         .await?;
     if !resp.status().is_success() {
         return Err(AppError::msg(format!("delete HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Cluster nodes + policies + channels + definitions
+// ----------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn list_nodes(connection: RabbitConnection) -> AppResult<Vec<NodeInfo>> {
+    get_json(&connection, "/api/nodes").await
+}
+
+#[tauri::command]
+pub async fn list_policies(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+) -> AppResult<Vec<PolicyInfo>> {
+    let path = match vhost {
+        Some(v) => format!("/api/policies/{}", enc_vhost(&v)),
+        None => "/api/policies".to_string(),
+    };
+    get_json(&connection, &path).await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PolicySpec {
+    pub vhost: String,
+    pub name: String,
+    pub pattern: String,
+    /// "all" | "queues" | "exchanges" | "classic_queues" | "quorum_queues" | "streams"
+    #[serde(default = "default_apply_to")]
+    pub apply_to: String,
+    #[serde(default)]
+    pub priority: i32,
+    /// The actual policy definition — map of policy keys to values
+    /// (e.g. {"max-length": 10000, "message-ttl": 60000}).
+    #[serde(default)]
+    pub definition: serde_json::Map<String, Value>,
+}
+
+fn default_apply_to() -> String { "all".to_string() }
+
+#[tauri::command]
+pub async fn create_policy(connection: RabbitConnection, spec: PolicySpec) -> AppResult<()> {
+    let url = format!(
+        "{}/api/policies/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.vhost),
+        enc_vhost(&spec.name),
+    );
+    let body = json!({
+        "pattern": spec.pattern,
+        "apply-to": spec.apply_to,
+        "priority": spec.priority,
+        "definition": spec.definition,
+    });
+    declare(&connection, &url, body).await
+}
+
+#[tauri::command]
+pub async fn delete_policy(
+    connection: RabbitConnection,
+    vhost: String,
+    name: String,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/policies/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&vhost),
+        enc_vhost(&name),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("delete HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn close_channel(
+    connection: RabbitConnection,
+    name: String,
+    reason: Option<String>,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/channels/{}",
+        connection.mgmt_base(),
+        enc_vhost(&name),
+    );
+    let mut req = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password));
+    if let Some(r) = reason {
+        req = req.header("X-Reason", r);
+    }
+    let resp = req.send().await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("close HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+/// Snapshot of the full broker topology (queues, exchanges, bindings, vhosts,
+/// users, parameters, policies) — same shape as the official "Export
+/// definitions" feature in the management UI.
+#[tauri::command]
+pub async fn export_definitions(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+) -> AppResult<Value> {
+    let path = match vhost {
+        Some(v) => format!("/api/definitions/{}", enc_vhost(&v)),
+        None => "/api/definitions".to_string(),
+    };
+    get_json(&connection, &path).await
+}
+
+#[tauri::command]
+pub async fn import_definitions(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+    definitions: Value,
+) -> AppResult<()> {
+    let url = match vhost {
+        Some(v) => format!(
+            "{}/api/definitions/{}",
+            connection.mgmt_base(),
+            enc_vhost(&v),
+        ),
+        None => format!("{}/api/definitions", connection.mgmt_base()),
+    };
+    let resp = client()?
+        .post(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .json(&definitions)
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        let s = resp.status();
+        let txt = resp.text().await.unwrap_or_default();
+        return Err(AppError::msg(format!(
+            "HTTP {} {}: {}",
+            s.as_u16(),
+            url,
+            preview(&txt),
+        )));
     }
     Ok(())
 }

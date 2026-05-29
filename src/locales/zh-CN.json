@@ -25,7 +25,18 @@
     "deleteConfirmTitle": "移除连接",
     "deleteConfirmDetail": "确认从已保存的连接中移除 \"{{name}}\" ({{host}})？\n\n此操作不可撤销。",
     "deleteConfirmCancel": "取消",
-    "deleteConfirmAction": "移除"
+    "deleteConfirmAction": "移除",
+    "health": {
+      "idle": "尚未连接",
+      "loading": "连接中…",
+      "ok": "健康",
+      "error": "最近一次请求失败"
+    },
+    "export": "导出",
+    "import": "导入",
+    "exported": "连接已导出",
+    "exportWarn": "导出文件包含明文密码，请妥善保管。",
+    "imported": "已导入 {{count}} 个连接"
   },
   "dialog": {
     "addTitle": "新增 RabbitMQ 连接",
@@ -64,7 +75,9 @@
       "bindings": "绑定",
       "publish": "发布消息",
       "connections": "连接",
-      "channels": "Channel"
+      "channels": "Channel",
+      "nodes": "节点",
+      "policies": "策略"
     },
     "empty": {
       "title": "请选择一个连接",
@@ -106,7 +119,18 @@
     "purgeConfirmDetail": "将清空队列 \"{{name}}\" 中的所有消息，操作不可撤销。",
     "deleteConfirmTitle": "删除队列",
     "deleteConfirmDetail": "将从 Broker 删除队列 \"{{name}}\"，操作不可撤销。",
-    "cancel": "取消"
+    "cancel": "取消",
+    "batch": {
+      "selected": "已选 {{count}} 项",
+      "purge": "批量清空",
+      "delete": "批量删除",
+      "clear": "清除选择",
+      "purgeConfirmTitle": "批量清空选中队列？",
+      "deleteConfirmTitle": "批量删除选中队列？",
+      "confirmDetail": "此操作会影响 {{count}} 个队列。",
+      "done": "完成，已处理 {{count}} 个队列。",
+      "partial": "{{ok}} 成功，{{fail}} 失败。"
+    }
   },
   "exchanges": {
     "filterPlaceholder": "按 Exchange 名筛选…",
@@ -143,7 +167,35 @@
     "close": "关闭",
     "empty": "尚未拉取消息。",
     "exchange": "exchange",
-    "routingKey": "路由键"
+    "routingKey": "路由键",
+    "tail": "实时跟踪",
+    "export": "导出…",
+    "exported": "已导出 {{count}} 条消息"
+  },
+  "body": {
+    "raw": "原始",
+    "tree": "JSON 树",
+    "hex": "Hex",
+    "copy": "复制"
+  },
+  "palette": {
+    "placeholder": "搜索 queue / exchange / binding…",
+    "empty": "无结果",
+    "hintNav": "上下选择",
+    "hintSelect": "确认",
+    "hintClose": "关闭"
+  },
+  "definitions": {
+    "openBtn": "定义文件…",
+    "title": "Broker 定义",
+    "scope": "操作范围：{{scope}}",
+    "help": "导出会把整个 Broker 拓扑（队列 / Exchange / 绑定 / 策略 / 用户）保存为 JSON；导入会把同样的 JSON 应用到 Broker 上，已有对象合并，缺失对象创建。",
+    "export": "导出…",
+    "import": "导入…",
+    "exporting": "导出中…",
+    "importing": "导入中…",
+    "exportSuccess": "定义已导出。",
+    "importSuccess": "定义已导入。"
   },
   "publish": {
     "exchange": "Exchange",
@@ -235,7 +287,45 @@
       "unconfirmed": "未确认发布",
       "prefetch": "prefetch",
       "state": "状态"
+    },
+    "closeConfirmTitle": "关闭 channel？",
+    "closeConfirmDetail": "强制关闭 channel “{{name}}”，对应客户端会感知到。",
+    "closed": "已关闭 channel “{{name}}”"
+  },
+  "nodes": {
+    "none": "未返回任何节点信息。",
+    "uptime": "运行 {{hours}} 小时",
+    "metric": {
+      "mem": "内存",
+      "fd": "文件描述符",
+      "sockets": "套接字",
+      "disk": "磁盘",
+      "proc": "Erlang 进程"
     }
+  },
+  "policies": {
+    "button": "新建策略",
+    "filterPlaceholder": "按策略名筛选…",
+    "count": "{{count}} 条策略",
+    "none": "未定义策略。",
+    "col": {
+      "name": "名称",
+      "vhost": "vhost",
+      "pattern": "正则",
+      "applyTo": "应用对象",
+      "priority": "优先级",
+      "definition": "定义"
+    },
+    "createTitle": "新建策略",
+    "createName": "名称",
+    "createPattern": "正则模式（如 ^logs\\.）",
+    "createApplyTo": "应用对象",
+    "createPriority": "优先级",
+    "createDefinition": "定义（max-length / message-ttl / dead-letter-exchange 等）",
+    "deleteConfirmTitle": "确认删除策略？",
+    "deleteConfirmDetail": "删除策略 “{{name}}”。",
+    "created": "策略已创建。",
+    "deleted": "已删除策略 “{{name}}”"
   },
   "usage": {
     "title": "快速上手",

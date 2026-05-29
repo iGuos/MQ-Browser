@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { RabbitConnection, DetailTab } from '@shared/types'
 import { releaseTopologyWorkspace } from './topologyStore'
 
@@ -41,7 +42,9 @@ function newWorkspaceId(): string {
   return `ws-${crypto.randomUUID()}`
 }
 
-export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
+export const useWorkspaceUiStore = create<State & Actions>()(
+  persist(
+    (set, get) => ({
   workspaceOrder: [DEFAULT_WORKSPACE_ID],
   activeWorkspaceId: DEFAULT_WORKSPACE_ID,
   selectedConnByWs: { [DEFAULT_WORKSPACE_ID]: null },
@@ -166,4 +169,18 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
       return { selectedConnByWs: next }
     })
   },
-}))
+    }),
+    {
+      name: 'mq-browser/workspace-ui/v1',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({
+        workspaceOrder: s.workspaceOrder,
+        activeWorkspaceId: s.activeWorkspaceId,
+        selectedConnByWs: s.selectedConnByWs,
+        activeVhostByWs: s.activeVhostByWs,
+        detailTabByWs: s.detailTabByWs,
+        autoRefreshByWs: s.autoRefreshByWs,
+      }),
+    },
+  ),
+)

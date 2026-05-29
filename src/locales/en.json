@@ -25,7 +25,18 @@
     "deleteConfirmTitle": "Remove connection",
     "deleteConfirmDetail": "Remove \"{{name}}\" ({{host}}) from saved connections?\n\nThis cannot be undone.",
     "deleteConfirmCancel": "Cancel",
-    "deleteConfirmAction": "Remove"
+    "deleteConfirmAction": "Remove",
+    "health": {
+      "idle": "Not connected yet",
+      "loading": "Connecting…",
+      "ok": "Healthy",
+      "error": "Last request failed"
+    },
+    "export": "Export",
+    "import": "Import",
+    "exported": "Connections exported",
+    "exportWarn": "Passwords are stored in plaintext in this file — handle with care.",
+    "imported": "Imported {{count}} connection(s)"
   },
   "dialog": {
     "addTitle": "Add RabbitMQ connection",
@@ -64,7 +75,9 @@
       "bindings": "Bindings",
       "publish": "Publish",
       "connections": "Connections",
-      "channels": "Channels"
+      "channels": "Channels",
+      "nodes": "Nodes",
+      "policies": "Policies"
     },
     "empty": {
       "title": "Pick a connection",
@@ -106,7 +119,18 @@
     "purgeConfirmDetail": "Drop every message in \"{{name}}\". This cannot be undone.",
     "deleteConfirmTitle": "Delete queue",
     "deleteConfirmDetail": "Delete queue \"{{name}}\" from the broker. This cannot be undone.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "batch": {
+      "selected": "{{count}} selected",
+      "purge": "Purge selected",
+      "delete": "Delete selected",
+      "clear": "Clear",
+      "purgeConfirmTitle": "Purge selected queues?",
+      "deleteConfirmTitle": "Delete selected queues?",
+      "confirmDetail": "This will affect {{count}} queue(s).",
+      "done": "Done. Affected {{count}} queue(s).",
+      "partial": "{{ok}} succeeded, {{fail}} failed."
+    }
   },
   "exchanges": {
     "filterPlaceholder": "Filter exchanges…",
@@ -143,7 +167,35 @@
     "close": "Close",
     "empty": "No messages fetched yet.",
     "exchange": "exchange",
-    "routingKey": "routing key"
+    "routingKey": "routing key",
+    "tail": "Live tail",
+    "export": "Export…",
+    "exported": "Exported {{count}} message(s)"
+  },
+  "body": {
+    "raw": "Raw",
+    "tree": "Tree",
+    "hex": "Hex",
+    "copy": "Copy"
+  },
+  "palette": {
+    "placeholder": "Search queues, exchanges, bindings…",
+    "empty": "No results.",
+    "hintNav": "navigate",
+    "hintSelect": "select",
+    "hintClose": "close"
+  },
+  "definitions": {
+    "openBtn": "Definitions…",
+    "title": "Broker definitions",
+    "scope": "Operating on: {{scope}}",
+    "help": "Export saves the full broker definitions (queues, exchanges, bindings, policies, users) as JSON. Import overlays the same JSON onto the broker — existing objects are merged, missing ones are created.",
+    "export": "Export…",
+    "import": "Import…",
+    "exporting": "Exporting…",
+    "importing": "Importing…",
+    "exportSuccess": "Definitions exported.",
+    "importSuccess": "Definitions imported."
   },
   "publish": {
     "exchange": "Exchange",
@@ -235,7 +287,45 @@
       "unconfirmed": "Unconfirmed",
       "prefetch": "Prefetch",
       "state": "State"
+    },
+    "closeConfirmTitle": "Close channel?",
+    "closeConfirmDetail": "Force-close channel \"{{name}}\". The client will see it disappear.",
+    "closed": "Closed channel \"{{name}}\""
+  },
+  "nodes": {
+    "none": "No cluster nodes returned.",
+    "uptime": "uptime {{hours}}h",
+    "metric": {
+      "mem": "Memory",
+      "fd": "File descriptors",
+      "sockets": "Sockets",
+      "disk": "Disk",
+      "proc": "Erlang processes"
     }
+  },
+  "policies": {
+    "button": "New policy",
+    "filterPlaceholder": "Filter policies…",
+    "count": "{{count}} policy/policies",
+    "none": "No policies defined.",
+    "col": {
+      "name": "Name",
+      "vhost": "vhost",
+      "pattern": "Pattern",
+      "applyTo": "Apply to",
+      "priority": "Priority",
+      "definition": "Definition"
+    },
+    "createTitle": "Create policy",
+    "createName": "Name",
+    "createPattern": "Regex pattern (e.g. ^logs\\.)",
+    "createApplyTo": "Apply to",
+    "createPriority": "Priority",
+    "createDefinition": "Definition (max-length, message-ttl, dead-letter-exchange, …)",
+    "deleteConfirmTitle": "Delete policy?",
+    "deleteConfirmDetail": "Delete policy \"{{name}}\".",
+    "created": "Policy created.",
+    "deleted": "Deleted policy \"{{name}}\""
   },
   "usage": {
     "title": "Getting started",
