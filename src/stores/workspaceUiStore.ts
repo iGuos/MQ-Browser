@@ -4,6 +4,14 @@ import { releaseTopologyWorkspace } from './topologyStore'
 
 export const DEFAULT_WORKSPACE_ID = 'ws-default'
 
+export interface AutoRefresh {
+  enabled: boolean
+  /** Milliseconds between refresh calls. */
+  intervalMs: number
+}
+
+export const DEFAULT_AUTO_REFRESH: AutoRefresh = { enabled: false, intervalMs: 10_000 }
+
 type State = {
   workspaceOrder: string[]
   activeWorkspaceId: string
@@ -13,6 +21,8 @@ type State = {
   activeVhostByWs: Record<string, string | null>
   /** Active detail tab per workspace. */
   detailTabByWs: Record<string, DetailTab>
+  /** Auto-refresh config per workspace. */
+  autoRefreshByWs: Record<string, AutoRefresh>
 }
 
 type Actions = {
@@ -23,6 +33,7 @@ type Actions = {
   selectForActiveWorkspace: (connId: string | null) => void
   setActiveVhost: (workspaceId: string, vhost: string | null) => void
   setDetailTab: (workspaceId: string, tab: DetailTab) => void
+  setAutoRefresh: (workspaceId: string, patch: Partial<AutoRefresh>) => void
   pruneSelectionsAfterHydrate: (list: RabbitConnection[]) => void
 }
 
@@ -36,6 +47,7 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
   selectedConnByWs: { [DEFAULT_WORKSPACE_ID]: null },
   activeVhostByWs: { [DEFAULT_WORKSPACE_ID]: null },
   detailTabByWs: { [DEFAULT_WORKSPACE_ID]: 'queues' },
+  autoRefreshByWs: { [DEFAULT_WORKSPACE_ID]: { ...DEFAULT_AUTO_REFRESH } },
 
   setActiveWorkspace: (id) => {
     if (!get().workspaceOrder.includes(id)) return
@@ -43,8 +55,14 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
   },
 
   addWorkspaceCloneOfActive: () => {
-    const { workspaceOrder, activeWorkspaceId, selectedConnByWs, activeVhostByWs, detailTabByWs } =
-      get()
+    const {
+      workspaceOrder,
+      activeWorkspaceId,
+      selectedConnByWs,
+      activeVhostByWs,
+      detailTabByWs,
+      autoRefreshByWs,
+    } = get()
     const nid = newWorkspaceId()
     set({
       workspaceOrder: [...workspaceOrder, nid],
@@ -61,12 +79,22 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
         ...detailTabByWs,
         [nid]: detailTabByWs[activeWorkspaceId] ?? 'queues',
       },
+      autoRefreshByWs: {
+        ...autoRefreshByWs,
+        [nid]: { ...(autoRefreshByWs[activeWorkspaceId] ?? DEFAULT_AUTO_REFRESH) },
+      },
     })
   },
 
   removeWorkspace: (workspaceId) => {
-    const { workspaceOrder, activeWorkspaceId, selectedConnByWs, activeVhostByWs, detailTabByWs } =
-      get()
+    const {
+      workspaceOrder,
+      activeWorkspaceId,
+      selectedConnByWs,
+      activeVhostByWs,
+      detailTabByWs,
+      autoRefreshByWs,
+    } = get()
     if (workspaceOrder.length <= 1) return
     const idx = workspaceOrder.indexOf(workspaceId)
     if (idx < 0) return
@@ -75,9 +103,11 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
     const nextSel = { ...selectedConnByWs }
     const nextVhost = { ...activeVhostByWs }
     const nextTab = { ...detailTabByWs }
+    const nextAuto = { ...autoRefreshByWs }
     delete nextSel[workspaceId]
     delete nextVhost[workspaceId]
     delete nextTab[workspaceId]
+    delete nextAuto[workspaceId]
     releaseTopologyWorkspace(workspaceId)
 
     let nextActive = activeWorkspaceId
@@ -91,6 +121,7 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
       selectedConnByWs: nextSel,
       activeVhostByWs: nextVhost,
       detailTabByWs: nextTab,
+      autoRefreshByWs: nextAuto,
     })
   },
 
@@ -110,6 +141,17 @@ export const useWorkspaceUiStore = create<State & Actions>((set, get) => ({
 
   setDetailTab: (workspaceId, tab) =>
     set((s) => ({ detailTabByWs: { ...s.detailTabByWs, [workspaceId]: tab } })),
+
+  setAutoRefresh: (workspaceId, patch) =>
+    set((s) => ({
+      autoRefreshByWs: {
+        ...s.autoRefreshByWs,
+        [workspaceId]: {
+          ...(s.autoRefreshByWs[workspaceId] ?? DEFAULT_AUTO_REFRESH),
+          ...patch,
+        },
+      },
+    })),
 
   pruneSelectionsAfterHydrate: (list) => {
     const ids = new Set(list.map((x) => x.id))

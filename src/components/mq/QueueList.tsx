@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import type { QueueInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { MessageViewer } from './MessageViewer'
+import { CreateQueueDialog } from './CreateQueueDialog'
 
 type Slice =
   | {
@@ -22,10 +26,14 @@ export function QueueList({
   slice: Slice
 }) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
   const [peekTarget, setPeekTarget] = useState<QueueInfo | null>(null)
   const [confirmPurge, setConfirmPurge] = useState<QueueInfo | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<QueueInfo | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -52,6 +60,13 @@ export function QueueList({
         <span className="text-[11px] text-zinc-500">
           {t('queues.count', { count: filtered.length })}
         </span>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="rounded-md bg-gradient-to-r from-cyan-500 to-teal-500 px-2.5 py-1.5 text-[11px] font-medium text-zinc-950 hover:from-cyan-400 hover:to-teal-400"
+        >
+          + {t('create.queue.button')}
+        </button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
@@ -157,6 +172,14 @@ export function QueueList({
         {t('queues.deleteConfirmDetail', { name: confirmDelete?.name ?? '' })}
       </Modal>
       {vhost ? null : null}
+
+      <CreateQueueDialog
+        open={showCreate}
+        connection={connection}
+        vhost={activeVhost ?? connection.vhost}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+      />
     </div>
   )
 }

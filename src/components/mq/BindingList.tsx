@@ -1,12 +1,34 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BindingInfo } from '@shared/types'
+import type { BindingInfo, ExchangeInfo, QueueInfo, RabbitConnection } from '@shared/types'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { CreateBindingDialog } from './CreateBindingDialog'
 
-type Slice = { bindings: BindingInfo[]; status: 'idle' | 'loading' | 'ok' | 'error' } | null
+type Slice =
+  | {
+      bindings: BindingInfo[]
+      exchanges: ExchangeInfo[]
+      queues: QueueInfo[]
+      status: 'idle' | 'loading' | 'ok' | 'error'
+    }
+  | null
 
-export function BindingList({ slice }: { slice: Slice }) {
+export function BindingList({
+  slice,
+  connection,
+}: {
+  slice: Slice
+  connection: RabbitConnection
+}) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const list = slice?.bindings ?? []
@@ -31,6 +53,13 @@ export function BindingList({ slice }: { slice: Slice }) {
         <span className="text-[11px] text-zinc-500">
           {t('bindings.count', { count: filtered.length })}
         </span>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="rounded-md bg-gradient-to-r from-cyan-500 to-teal-500 px-2.5 py-1.5 text-[11px] font-medium text-zinc-950 hover:from-cyan-400 hover:to-teal-400"
+        >
+          + {t('create.binding.button')}
+        </button>
       </div>
       <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
         <table className="min-w-full text-xs">
@@ -78,6 +107,16 @@ export function BindingList({ slice }: { slice: Slice }) {
           </tbody>
         </table>
       </div>
+
+      <CreateBindingDialog
+        open={showCreate}
+        connection={connection}
+        vhost={activeVhost ?? connection.vhost}
+        exchanges={slice?.exchanges ?? []}
+        queues={slice?.queues ?? []}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+      />
     </div>
   )
 }

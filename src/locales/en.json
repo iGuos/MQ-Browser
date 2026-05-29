@@ -54,6 +54,7 @@
     "allVhosts": "(all)",
     "refresh": "Refresh",
     "refreshing": "Refreshing…",
+    "autoRefresh": "Auto",
     "errorShort": "Failed",
     "loading": "Loading…",
     "tab": {
@@ -61,7 +62,9 @@
       "queues": "Queues",
       "exchanges": "Exchanges",
       "bindings": "Bindings",
-      "publish": "Publish"
+      "publish": "Publish",
+      "connections": "Connections",
+      "channels": "Channels"
     },
     "empty": {
       "title": "Pick a connection",
@@ -114,7 +117,9 @@
       "type": "Type",
       "flags": "Flags"
     },
-    "none": "No exchanges"
+    "none": "No exchanges",
+    "deleteConfirmTitle": "Delete exchange?",
+    "deleteConfirmDetail": "Delete exchange \"{{name}}\". Bindings on it will also be removed."
   },
   "bindings": {
     "filterPlaceholder": "Filter bindings…",
@@ -152,7 +157,85 @@
     "sending": "Publishing…",
     "success": "Published. Broker routed it to at least one queue.",
     "unrouted": "Published, but no queue matched the routing key (message dropped).",
-    "hint": "Sent through the management HTTP API. Failures surface as errors here."
+    "hint": "Sent through the management HTTP API. Failures surface as errors here.",
+    "templates": {
+      "label": "Template",
+      "none": "— pick a template —",
+      "save": "Save as template",
+      "update": "Update template",
+      "delete": "Delete",
+      "saveTitle": "Save publish template",
+      "nameLabel": "Template name",
+      "confirmSave": "Save"
+    }
+  },
+  "connections": {
+    "filterPlaceholder": "Filter by name, user, peer host",
+    "count": "{{count}} connection(s)",
+    "none": "No active connections",
+    "col": {
+      "peer": "Peer",
+      "user": "User",
+      "vhost": "vhost",
+      "protocol": "Protocol",
+      "channels": "Channels",
+      "state": "State",
+      "actions": "Actions"
+    },
+    "action": {
+      "close": "Close"
+    },
+    "closeConfirmTitle": "Close connection?",
+    "closeConfirmDetail": "Force-close connection \"{{name}}\". The client will see a connection drop."
+  },
+  "create": {
+    "submit": "Create",
+    "addArgument": "argument",
+    "noArguments": "No extra arguments.",
+    "queue": {
+      "button": "New queue",
+      "title": "Create queue",
+      "name": "Name",
+      "durable": "durable",
+      "autoDelete": "auto-delete",
+      "arguments": "Arguments (x-message-ttl, x-dead-letter-exchange, …)"
+    },
+    "exchange": {
+      "button": "New exchange",
+      "title": "Create exchange",
+      "name": "Name",
+      "type": "Type",
+      "durable": "durable",
+      "autoDelete": "auto-delete",
+      "internal": "internal",
+      "arguments": "Arguments"
+    },
+    "binding": {
+      "button": "New binding",
+      "title": "Create binding",
+      "source": "Source exchange",
+      "destinationType": "Destination type",
+      "destQueue": "queue",
+      "destExchange": "exchange",
+      "destination": "Destination",
+      "routingKey": "Routing key",
+      "arguments": "Arguments (e.g. headers match)"
+    }
+  },
+  "channels": {
+    "filterPlaceholder": "Filter by name, user, vhost",
+    "count": "{{count}} channel(s)",
+    "none": "No active channels",
+    "col": {
+      "name": "Name",
+      "user": "User",
+      "vhost": "vhost",
+      "consumers": "Consumers",
+      "unacked": "Unacked",
+      "unconfirmed": "Unconfirmed",
+      "prefetch": "Prefetch",
+      "state": "State"
+    }
   },
   "usage": {
     "title": "Getting started",

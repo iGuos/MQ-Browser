@@ -1,11 +1,17 @@
 import { invoke } from '@tauri-apps/api/core'
 import type {
   BindingInfo,
+  BindingSpec,
+  ChannelInfo,
   ExchangeInfo,
+  ExchangeSpec,
   PeekedMessage,
   PublishPayload,
+  PublishTemplate,
   QueueInfo,
+  QueueSpec,
   RabbitConnection,
+  RuntimeConnection,
   VhostInfo,
 } from '@shared/types'
 
@@ -50,4 +56,30 @@ export const api = {
     vhost: string,
     payload: PublishPayload,
   ) => invoke<boolean>('publish_message', { connection, vhost, payload }),
+
+  // Runtime state ------------------------------------------------------------
+  listRuntimeConnections: (connection: RabbitConnection, vhost?: string | null) =>
+    invoke<RuntimeConnection[]>('list_runtime_connections', {
+      connection,
+      vhost: vhost ?? null,
+    }),
+  listChannels: (connection: RabbitConnection, vhost?: string | null) =>
+    invoke<ChannelInfo[]>('list_channels', { connection, vhost: vhost ?? null }),
+  closeRuntimeConnection: (connection: RabbitConnection, name: string, reason?: string) =>
+    invoke<void>('close_runtime_connection', { connection, name, reason: reason ?? null }),
+
+  // Create / declare ---------------------------------------------------------
+  createQueue: (connection: RabbitConnection, spec: QueueSpec) =>
+    invoke<void>('create_queue', { connection, spec }),
+  createExchange: (connection: RabbitConnection, spec: ExchangeSpec) =>
+    invoke<void>('create_exchange', { connection, spec }),
+  createBinding: (connection: RabbitConnection, spec: BindingSpec) =>
+    invoke<void>('create_binding', { connection, spec }),
+  deleteExchange: (connection: RabbitConnection, vhost: string, exchange: string) =>
+    invoke<void>('delete_exchange', { connection, vhost, exchange }),
+
+  // Publish templates (persisted via tauri-plugin-store) -------------------
+  listPublishTemplates: () => invoke<PublishTemplate[]>('list_publish_templates'),
+  savePublishTemplates: (templates: PublishTemplate[]) =>
+    invoke<void>('save_publish_templates', { templates }),
 }

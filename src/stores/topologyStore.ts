@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import type {
   BindingInfo,
+  ChannelInfo,
   ExchangeInfo,
   QueueInfo,
   RabbitConnection,
+  RuntimeConnection,
   VhostInfo,
 } from '@shared/types'
 import { api } from '@/lib/tauri'
@@ -17,6 +19,8 @@ interface TopologySlice {
   queues: QueueInfo[]
   exchanges: ExchangeInfo[]
   bindings: BindingInfo[]
+  runtimeConnections: RuntimeConnection[]
+  channels: ChannelInfo[]
   /** Server overview (broker version, cluster name, etc.) */
   overview: Record<string, unknown> | null
 }
@@ -40,6 +44,8 @@ function emptySlice(): TopologySlice {
     queues: [],
     exchanges: [],
     bindings: [],
+    runtimeConnections: [],
+    channels: [],
     overview: null,
   }
 }
@@ -64,13 +70,16 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     }))
     try {
       const targetVhost = vhost ?? undefined
-      const [overview, vhosts, queues, exchanges, bindings] = await Promise.all([
-        api.testConnection(connection).catch(() => null),
-        api.listVhosts(connection).catch(() => [] as VhostInfo[]),
-        api.listQueues(connection, targetVhost),
-        api.listExchanges(connection, targetVhost),
-        api.listBindings(connection, targetVhost),
-      ])
+      const [overview, vhosts, queues, exchanges, bindings, runtimeConnections, channels] =
+        await Promise.all([
+          api.testConnection(connection).catch(() => null),
+          api.listVhosts(connection).catch(() => [] as VhostInfo[]),
+          api.listQueues(connection, targetVhost),
+          api.listExchanges(connection, targetVhost),
+          api.listBindings(connection, targetVhost),
+          api.listRuntimeConnections(connection, targetVhost).catch(() => []),
+          api.listChannels(connection, targetVhost).catch(() => []),
+        ])
       set((s) => ({
         byKey: {
           ...s.byKey,
@@ -82,6 +91,8 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
             queues,
             exchanges,
             bindings,
+            runtimeConnections,
+            channels,
           },
         },
       }))

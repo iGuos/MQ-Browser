@@ -7,8 +7,13 @@
 //! Docs: https://rawcdn.githack.com/rabbitmq/rabbitmq-server/v3.13.0/deps/rabbitmq_management/priv/www/api/index.html
 
 use crate::error::{AppError, AppResult};
-use crate::types::{BindingInfo, ExchangeInfo, QueueInfo, RabbitConnection, VhostInfo};
+use crate::types::{
+    BindingInfo, ChannelInfo, ExchangeInfo, QueueInfo, RabbitConnection, RuntimeConnection,
+    VhostInfo,
+};
 use reqwest::Client;
+use serde::Deserialize;
+use serde_json::{json, Value};
 use std::time::Duration;
 
 fn client() -> AppResult<Client> {
@@ -175,6 +180,227 @@ pub async fn delete_queue(
         .await?;
     if !resp.status().is_success() {
         return Err(AppError::msg(format!("delete HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Runtime connections + channels (live AMQP state on the broker)
+// ----------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn list_runtime_connections(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+) -> AppResult<Vec<RuntimeConnection>> {
+    let path = match vhost {
+        Some(v) => format!("/api/vhosts/{}/connections", enc_vhost(&v)),
+        None => "/api/connections".to_string(),
+    };
+    get_json(&connection, &path).await
+}
+
+#[tauri::command]
+pub async fn list_channels(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+) -> AppResult<Vec<ChannelInfo>> {
+    let path = match vhost {
+        Some(v) => format!("/api/vhosts/{}/channels", enc_vhost(&v)),
+        None => "/api/channels".to_string(),
+    };
+    get_json(&connection, &path).await
+}
+
+#[tauri::command]
+pub async fn close_runtime_connection(
+    connection: RabbitConnection,
+    name: String,
+    reason: Option<String>,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/connections/{}",
+        connection.mgmt_base(),
+        enc_vhost(&name),
+    );
+    let mut req = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password));
+    if let Some(r) = reason {
+        req = req.header("X-Reason", r);
+    }
+    let resp = req.send().await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("close HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Create / declare: queues, exchanges, bindings
+// ----------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueueSpec {
+    pub name: String,
+    pub vhost: String,
+    #[serde(default = "default_true")]
+    pub durable: bool,
+    #[serde(default)]
+    pub auto_delete: bool,
+    /// Free-form arguments map (x-message-ttl, x-dead-letter-exchange, etc.)
+    #[serde(default)]
+    pub arguments: serde_json::Map<String, Value>,
+}
+
+fn default_true() -> bool { true }
+
+#[tauri::command]
+pub async fn create_queue(connection: RabbitConnection, spec: QueueSpec) -> AppResult<()> {
+    let url = format!(
+        "{}/api/queues/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.vhost),
+        enc_vhost(&spec.name),
+    );
+    let body = json!({
+        "durable": spec.durable,
+        "auto_delete": spec.auto_delete,
+        "arguments": spec.arguments,
+    });
+    declare(&connection, &url, body).await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeSpec {
+    pub name: String,
+    pub vhost: String,
+    /// direct | fanout | topic | headers | x-*
+    #[serde(default = "default_exchange_type")]
+    pub kind: String,
+    #[serde(default = "default_true")]
+    pub durable: bool,
+    #[serde(default)]
+    pub auto_delete: bool,
+    #[serde(default)]
+    pub internal: bool,
+    #[serde(default)]
+    pub arguments: serde_json::Map<String, Value>,
+}
+
+fn default_exchange_type() -> String { "direct".to_string() }
+
+#[tauri::command]
+pub async fn create_exchange(connection: RabbitConnection, spec: ExchangeSpec) -> AppResult<()> {
+    let url = format!(
+        "{}/api/exchanges/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.vhost),
+        enc_vhost(&spec.name),
+    );
+    let body = json!({
+        "type": spec.kind,
+        "durable": spec.durable,
+        "auto_delete": spec.auto_delete,
+        "internal": spec.internal,
+        "arguments": spec.arguments,
+    });
+    declare(&connection, &url, body).await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BindingSpec {
+    pub vhost: String,
+    pub source: String,
+    pub destination: String,
+    /// "queue" | "exchange"
+    pub destination_type: String,
+    #[serde(default)]
+    pub routing_key: String,
+    #[serde(default)]
+    pub arguments: serde_json::Map<String, Value>,
+}
+
+#[tauri::command]
+pub async fn create_binding(connection: RabbitConnection, spec: BindingSpec) -> AppResult<()> {
+    // POST /api/bindings/{vhost}/e/{source}/{q|e}/{dest}
+    let dest_kind = match spec.destination_type.as_str() {
+        "exchange" | "e" => "e",
+        _ => "q",
+    };
+    let url = format!(
+        "{}/api/bindings/{}/e/{}/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.vhost),
+        enc_vhost(&spec.source),
+        dest_kind,
+        enc_vhost(&spec.destination),
+    );
+    let body = json!({
+        "routing_key": spec.routing_key,
+        "arguments": spec.arguments,
+    });
+    let resp = client()?
+        .post(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .json(&body)
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        let s = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(AppError::msg(format!(
+            "HTTP {} {}: {}",
+            s.as_u16(),
+            url,
+            preview(&body),
+        )));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_exchange(
+    connection: RabbitConnection,
+    vhost: String,
+    exchange: String,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/exchanges/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&vhost),
+        enc_vhost(&exchange),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("delete HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+async fn declare(connection: &RabbitConnection, url: &str, body: Value) -> AppResult<()> {
+    let resp = client()?
+        .put(url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .json(&body)
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        let s = resp.status();
+        let txt = resp.text().await.unwrap_or_default();
+        return Err(AppError::msg(format!(
+            "HTTP {} {}: {}",
+            s.as_u16(),
+            url,
+            preview(&txt),
+        )));
     }
     Ok(())
 }

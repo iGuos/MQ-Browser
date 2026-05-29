@@ -7,6 +7,7 @@ import { WorkspaceTabBar } from '@/components/workspace/WorkspaceTabBar'
 import { WorkspaceProvider } from '@/context/WorkspaceContext'
 import { useConnectionsStore } from '@/stores/connectionsStore'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { usePublishTemplatesStore } from '@/stores/publishTemplatesStore'
 
 /** Per-workspace shell — sidebar + detail panel. */
 function MqWorkspaceShell({
@@ -26,6 +27,7 @@ function MqWorkspaceShell({
 
 export default function App() {
   const hydrate = useConnectionsStore((s) => s.hydrate)
+  const hydrateTemplates = usePublishTemplatesStore((s) => s.hydrate)
   const [dialog, setDialog] = useState<{ mode: 'add' | 'edit'; source: RabbitConnection | null } | null>(
     null,
   )
@@ -35,7 +37,8 @@ export default function App() {
 
   useEffect(() => {
     void hydrate()
-  }, [hydrate])
+    void hydrateTemplates()
+  }, [hydrate, hydrateTemplates])
 
   return (
     <div className="relative flex h-screen w-screen overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">

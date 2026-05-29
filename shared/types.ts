@@ -56,6 +56,62 @@ export interface VhostInfo {
   tracing: boolean
 }
 
+export interface RuntimeConnection {
+  name: string
+  user: string
+  peerHost: string
+  peerPort: number
+  vhost: string
+  state: string
+  protocol: string
+  channels: number
+  /** Unix epoch milliseconds. */
+  connectedAt: number
+  clientProperties: Record<string, unknown>
+}
+
+export interface ChannelInfo {
+  name: string
+  user: string
+  vhost: string
+  number: number
+  consumerCount: number
+  messagesUnacknowledged: number
+  messagesUnconfirmed: number
+  prefetchCount: number
+  state: string
+  connectionDetails: Record<string, unknown>
+}
+
+export interface QueueSpec {
+  name: string
+  vhost: string
+  durable: boolean
+  autoDelete: boolean
+  arguments: Record<string, unknown>
+}
+
+export interface ExchangeSpec {
+  name: string
+  vhost: string
+  /** direct | fanout | topic | headers | x-* */
+  kind: string
+  durable: boolean
+  autoDelete: boolean
+  internal: boolean
+  arguments: Record<string, unknown>
+}
+
+export interface BindingSpec {
+  vhost: string
+  source: string
+  destination: string
+  /** "queue" | "exchange" */
+  destinationType: string
+  routingKey: string
+  arguments: Record<string, unknown>
+}
+
 export interface PeekedMessage {
   deliveryTag: number
   redelivered: boolean
@@ -76,5 +132,23 @@ export interface PublishPayload {
   headers: Record<string, string>
 }
 
+export interface PublishTemplate {
+  id: string
+  name: string
+  exchange: string
+  routingKey: string
+  body: string
+  persistent: boolean
+  contentType?: string
+  headers: Record<string, string>
+}
+
 /** Discriminator for the right-hand detail panel. */
-export type DetailTab = 'overview' | 'queues' | 'exchanges' | 'bindings' | 'publish'
+export type DetailTab =
+  | 'overview'
+  | 'queues'
+  | 'exchanges'
+  | 'bindings'
+  | 'connections'
+  | 'channels'
+  | 'publish'

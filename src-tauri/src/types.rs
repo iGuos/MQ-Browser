@@ -102,3 +102,53 @@ pub struct VhostInfo {
     #[serde(default)]
     pub tracing: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeConnection {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub user: String,
+    #[serde(default, alias = "peer_host")]
+    pub peer_host: String,
+    #[serde(default, alias = "peer_port")]
+    pub peer_port: u32,
+    #[serde(default)]
+    pub vhost: String,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub protocol: String,
+    #[serde(default, alias = "channels")]
+    pub channels: u32,
+    #[serde(default, alias = "connected_at")]
+    pub connected_at: u64,
+    #[serde(default, alias = "client_properties")]
+    pub client_properties: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelInfo {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub user: String,
+    #[serde(default)]
+    pub vhost: String,
+    #[serde(default)]
+    pub number: u32,
+    #[serde(default, alias = "consumer_count")]
+    pub consumer_count: u32,
+    #[serde(default, alias = "messages_unacknowledged")]
+    pub messages_unacknowledged: u32,
+    #[serde(default, alias = "messages_unconfirmed")]
+    pub messages_unconfirmed: u32,
+    #[serde(default, alias = "prefetch_count")]
+    pub prefetch_count: u32,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default, alias = "connection_details")]
+    pub connection_details: serde_json::Value,
+}

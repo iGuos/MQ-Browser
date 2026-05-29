@@ -54,6 +54,7 @@
     "allVhosts": "(全部)",
     "refresh": "刷新",
     "refreshing": "刷新中…",
+    "autoRefresh": "自动",
     "errorShort": "请求失败",
     "loading": "加载中…",
     "tab": {
@@ -61,7 +62,9 @@
       "queues": "队列",
       "exchanges": "Exchange",
       "bindings": "绑定",
-      "publish": "发布消息"
+      "publish": "发布消息",
+      "connections": "连接",
+      "channels": "Channel"
     },
     "empty": {
       "title": "请选择一个连接",
@@ -114,7 +117,9 @@
       "type": "类型",
       "flags": "属性"
     },
-    "none": "暂无 Exchange"
+    "none": "暂无 Exchange",
+    "deleteConfirmTitle": "确认删除 Exchange？",
+    "deleteConfirmDetail": "删除 Exchange “{{name}}”，关联的绑定也会被一并移除。"
   },
   "bindings": {
     "filterPlaceholder": "按绑定筛选…",
@@ -152,7 +157,85 @@
     "sending": "发送中…",
     "success": "发布成功，broker 已路由至至少一个队列。",
     "unrouted": "发布完成，但没有队列匹配该路由键（消息被丢弃）。",
-    "hint": "通过管理插件 HTTP API 发送；失败信息会显示在此处。"
+    "hint": "通过管理插件 HTTP API 发送；失败信息会显示在此处。",
+    "templates": {
+      "label": "模板",
+      "none": "— 选择模板 —",
+      "save": "存为模板",
+      "update": "更新模板",
+      "delete": "删除",
+      "saveTitle": "保存发布模板",
+      "nameLabel": "模板名称",
+      "confirmSave": "保存"
+    }
+  },
+  "connections": {
+    "filterPlaceholder": "按名称 / 用户 / 客户端地址 过滤",
+    "count": "{{count}} 个连接",
+    "none": "暂无活跃连接",
+    "col": {
+      "peer": "客户端",
+      "user": "用户",
+      "vhost": "vhost",
+      "protocol": "协议",
+      "channels": "channel 数",
+      "state": "状态",
+      "actions": "操作"
+    },
+    "action": {
+      "close": "强制关闭"
+    },
+    "closeConfirmTitle": "确认关闭连接？",
+    "closeConfirmDetail": "强制关闭连接 “{{name}}”，客户端将收到断连。"
+  },
+  "create": {
+    "submit": "创建",
+    "addArgument": "新增参数",
+    "noArguments": "暂无额外参数。",
+    "queue": {
+      "button": "新建队列",
+      "title": "新建队列",
+      "name": "名称",
+      "durable": "持久化",
+      "autoDelete": "自动删除",
+      "arguments": "参数 (x-message-ttl, x-dead-letter-exchange, …)"
+    },
+    "exchange": {
+      "button": "新建 Exchange",
+      "title": "新建 Exchange",
+      "name": "名称",
+      "type": "类型",
+      "durable": "持久化",
+      "autoDelete": "自动删除",
+      "internal": "internal",
+      "arguments": "参数"
+    },
+    "binding": {
+      "button": "新建绑定",
+      "title": "新建绑定",
+      "source": "源 Exchange",
+      "destinationType": "目标类型",
+      "destQueue": "队列",
+      "destExchange": "Exchange",
+      "destination": "目标",
+      "routingKey": "路由键",
+      "arguments": "参数（如 headers 匹配规则）"
+    }
+  },
+  "channels": {
+    "filterPlaceholder": "按名称 / 用户 / vhost 过滤",
+    "count": "{{count}} 个 channel",
+    "none": "暂无活跃 channel",
+    "col": {
+      "name": "名称",
+      "user": "用户",
+      "vhost": "vhost",
+      "consumers": "消费者",
+      "unacked": "未确认",
+      "unconfirmed": "未确认发布",
+      "prefetch": "prefetch",
+      "state": "状态"
+    }
   },
   "usage": {
     "title": "快速上手",

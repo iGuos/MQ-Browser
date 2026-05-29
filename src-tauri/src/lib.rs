@@ -23,6 +23,8 @@ pub fn run() {
             // connections
             connections::list_connections,
             connections::save_connections,
+            connections::list_publish_templates,
+            connections::save_publish_templates,
             // management api (HTTP)
             management::test_connection,
             management::list_vhosts,
@@ -31,6 +33,13 @@ pub fn run() {
             management::list_bindings,
             management::purge_queue,
             management::delete_queue,
+            management::delete_exchange,
+            management::list_runtime_connections,
+            management::list_channels,
+            management::close_runtime_connection,
+            management::create_queue,
+            management::create_exchange,
+            management::create_binding,
             // messages (over management HTTP)
             messages::peek_messages,
             messages::publish_message,

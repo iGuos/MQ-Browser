@@ -1,12 +1,29 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ExchangeInfo } from '@shared/types'
+import type { ExchangeInfo, RabbitConnection } from '@shared/types'
+import { Modal } from '@/components/Modal'
+import { api } from '@/lib/tauri'
+import { useTopologyStore } from '@/stores/topologyStore'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { CreateExchangeDialog } from './CreateExchangeDialog'
 
 type Slice = { exchanges: ExchangeInfo[]; status: 'idle' | 'loading' | 'ok' | 'error' } | null
 
-export function ExchangeList({ slice }: { slice: Slice }) {
+export function ExchangeList({
+  slice,
+  connection,
+}: {
+  slice: Slice
+  connection: RabbitConnection
+}) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<ExchangeInfo | null>(null)
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const list = slice?.exchanges ?? []
@@ -26,6 +43,13 @@ export function ExchangeList({ slice }: { slice: Slice }) {
         <span className="text-[11px] text-zinc-500">
           {t('exchanges.count', { count: filtered.length })}
         </span>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="rounded-md bg-gradient-to-r from-cyan-500 to-teal-500 px-2.5 py-1.5 text-[11px] font-medium text-zinc-950 hover:from-cyan-400 hover:to-teal-400"
+        >
+          + {t('create.exchange.button')}
+        </button>
       </div>
       <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
         <table className="min-w-full text-xs">
@@ -42,6 +66,9 @@ export function ExchangeList({ slice }: { slice: Slice }) {
               </th>
               <th className="px-3 py-2 text-[11px] font-semibold uppercase">
                 {t('exchanges.col.flags')}
+              </th>
+              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase">
+                {t('queues.col.actions')}
               </th>
             </tr>
           </thead>
@@ -65,11 +92,23 @@ export function ExchangeList({ slice }: { slice: Slice }) {
                   {e.autoDelete ? 'auto-delete ' : ''}
                   {e.internal ? 'internal' : ''}
                 </td>
+                <td className="px-3 py-2 text-right">
+                  {/* Default + system exchanges (name "" or "amq.*") cannot be deleted. */}
+                  {e.name && !e.name.startsWith('amq.') ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(e)}
+                      className="rounded-md border border-red-400/50 px-2 py-0.5 text-[10px] font-medium text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                    >
+                      {t('queues.action.delete')}
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             ))}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
                   {t('exchanges.none')}
                 </td>
               </tr>
@@ -77,6 +116,31 @@ export function ExchangeList({ slice }: { slice: Slice }) {
           </tbody>
         </table>
       </div>
+
+      <CreateExchangeDialog
+        open={showCreate}
+        connection={connection}
+        vhost={activeVhost ?? connection.vhost}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+      />
+
+      <Modal
+        open={confirmDelete !== null}
+        title={t('exchanges.deleteConfirmTitle')}
+        cancelText={t('queues.cancel')}
+        okText={t('queues.action.delete')}
+        onCancel={() => setConfirmDelete(null)}
+        onOk={async () => {
+          const target = confirmDelete
+          setConfirmDelete(null)
+          if (!target) return
+          await api.deleteExchange(connection, target.vhost, target.name)
+          void fetchTopology(workspaceId, connection, activeVhost)
+        }}
+      >
+        {t('exchanges.deleteConfirmDetail', { name: confirmDelete?.name ?? '' })}
+      </Modal>
     </div>
   )
 }

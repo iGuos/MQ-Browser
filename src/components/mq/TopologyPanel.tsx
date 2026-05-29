@@ -8,12 +8,23 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { QueueList } from './QueueList'
 import { ExchangeList } from './ExchangeList'
 import { BindingList } from './BindingList'
+import { ConnectionList } from './ConnectionList'
+import { ChannelList } from './ChannelList'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
 import { Select } from '@/components/Select'
+import { AutoRefreshControl } from './AutoRefreshControl'
 
-const TAB_ORDER: DetailTab[] = ['overview', 'queues', 'exchanges', 'bindings', 'publish']
+const TAB_ORDER: DetailTab[] = [
+  'overview',
+  'queues',
+  'exchanges',
+  'bindings',
+  'connections',
+  'channels',
+  'publish',
+]
 
 export function TopologyPanel() {
   const { t } = useTranslation()
@@ -104,6 +115,11 @@ export function TopologyPanel() {
           >
             {status === 'loading' ? t('panel.refreshing') : t('panel.refresh')}
           </button>
+          <AutoRefreshControl
+            workspaceId={workspaceId}
+            connection={selected}
+            vhost={activeVhost}
+          />
         </div>
       </header>
 
@@ -156,9 +172,13 @@ export function TopologyPanel() {
         ) : detailTab === 'queues' ? (
           <QueueList connection={selected} vhost={activeVhost} slice={slice ?? null} />
         ) : detailTab === 'exchanges' ? (
-          <ExchangeList slice={slice ?? null} />
+          <ExchangeList connection={selected} slice={slice ?? null} />
         ) : detailTab === 'bindings' ? (
-          <BindingList slice={slice ?? null} />
+          <BindingList connection={selected} slice={slice ?? null} />
+        ) : detailTab === 'connections' ? (
+          <ConnectionList connection={selected} slice={slice ?? null} />
+        ) : detailTab === 'channels' ? (
+          <ChannelList slice={slice ?? null} />
         ) : (
           <PublishDialog connection={selected} vhost={activeVhost} slice={slice ?? null} />
         )}
