@@ -2,13 +2,23 @@ mod commands;
 mod error;
 mod types;
 
-use commands::{amqp, connections, management};
+use commands::{connections, management, messages};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .setup(|_app| {
+            #[cfg(debug_assertions)]
+            {
+                use tauri::Manager;
+                if let Some(window) = _app.get_webview_window("main") {
+                    window.close_devtools();
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // connections
             connections::list_connections,
@@ -21,9 +31,9 @@ pub fn run() {
             management::list_bindings,
             management::purge_queue,
             management::delete_queue,
-            // amqp (lapin)
-            amqp::peek_messages,
-            amqp::publish_message,
+            // messages (over management HTTP)
+            messages::peek_messages,
+            messages::publish_message,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MQ Browser");

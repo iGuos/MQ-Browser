@@ -38,11 +38,16 @@ export const api = {
 
   peekMessages: (
     connection: RabbitConnection,
+    vhost: string,
     queue: string,
     count: number,
     requeue: boolean,
-  ) => invoke<PeekedMessage[]>('peek_messages', { connection, queue, count, requeue }),
+  ) => invoke<PeekedMessage[]>('peek_messages', { connection, vhost, queue, count, requeue }),
 
-  publishMessage: (connection: RabbitConnection, payload: PublishPayload) =>
-    invoke<void>('publish_message', { connection, payload }),
+  /** Resolves to `true` if the broker routed the message to at least one queue. */
+  publishMessage: (
+    connection: RabbitConnection,
+    vhost: string,
+    payload: PublishPayload,
+  ) => invoke<boolean>('publish_message', { connection, vhost, payload }),
 }

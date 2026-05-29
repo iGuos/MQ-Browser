@@ -9,8 +9,6 @@ pub enum AppError {
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
-    Lapin(#[from] lapin::Error),
-    #[error(transparent)]
     Serde(#[from] serde_json::Error),
     #[error(transparent)]
     Url(#[from] url::ParseError),

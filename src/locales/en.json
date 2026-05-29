@@ -32,13 +32,14 @@
     "editTitle": "Edit RabbitMQ connection",
     "labelName": "Display name",
     "labelHost": "Host",
-    "labelAmqpPort": "AMQP port",
+    "labelAmqpPort": "AMQP port (optional)",
+    "amqpPortPlaceholder": "5672 (not used by app)",
     "labelMgmtPort": "Mgmt port",
     "labelUsername": "Username",
     "labelPassword": "Password",
     "labelVhost": "Virtual host",
     "labelTls": "TLS",
-    "labelTlsHint": "Use amqps + https for management API",
+    "labelTlsHint": "Enable when the management URL starts with https://",
     "placeholderName": "e.g. Local RabbitMQ",
     "testConnection": "Test connection",
     "testing": "Testing…",
@@ -149,8 +150,9 @@
     "body": "Body",
     "send": "Publish",
     "sending": "Publishing…",
-    "success": "Published with publisher confirms.",
-    "hint": "Sent via lapin with publisher confirms — failure surfaces as an error here."
+    "success": "Published. Broker routed it to at least one queue.",
+    "unrouted": "Published, but no queue matched the routing key (message dropped).",
+    "hint": "Sent through the management HTTP API. Failures surface as errors here."
   },
   "usage": {
     "title": "Getting started",

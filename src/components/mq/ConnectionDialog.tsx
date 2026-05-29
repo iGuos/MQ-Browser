@@ -17,7 +17,8 @@ interface ConnectionDialogProps {
 interface FormState {
   name: string
   host: string
-  amqpPort: number
+  /** Optional — kept as metadata only. Empty string = unset. */
+  amqpPort: string
   mgmtPort: number
   username: string
   password: string
@@ -29,7 +30,7 @@ function defaults(): FormState {
   return {
     name: '',
     host: 'localhost',
-    amqpPort: 5672,
+    amqpPort: '',
     mgmtPort: 15672,
     username: 'guest',
     password: 'guest',
@@ -42,12 +43,22 @@ function fromConn(c: RabbitConnection): FormState {
   return {
     name: c.name,
     host: c.host,
-    amqpPort: c.amqpPort,
+    amqpPort: c.amqpPort ? String(c.amqpPort) : '',
     mgmtPort: c.mgmtPort,
     username: c.username,
     password: c.password,
     vhost: c.vhost,
     tls: c.tls,
+  }
+}
+
+function toConnPayload(form: FormState) {
+  const trimmed = form.amqpPort.trim()
+  const amqpPort = trimmed ? Number(trimmed) : undefined
+  return {
+    ...form,
+    amqpPort: Number.isFinite(amqpPort) ? amqpPort : undefined,
+    vhost: form.vhost || '/',
   }
 }
 
@@ -78,8 +89,7 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
       const probe: RabbitConnection = {
         id: source?.id ?? 'tmp',
         createdAt: Date.now(),
-        ...form,
-        vhost: form.vhost || '/',
+        ...toConnPayload(form),
       }
       const overview = (await api.testConnection(probe)) as Record<string, unknown>
       const ver = overview.rabbitmq_version ?? overview.product_version ?? '?'
@@ -95,7 +105,7 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
     if (!canSave) return
     setSaving(true)
     try {
-      const payload = { ...form, vhost: form.vhost || '/' }
+      const payload = toConnPayload(form)
       if (mode === 'edit' && source) {
         await updateConnection(source.id, payload)
       } else {
@@ -135,20 +145,21 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
             onChange={(e) => setForm((s) => ({ ...s, host: e.target.value }))}
           />
         </Field>
-        <Field label={t('dialog.labelAmqpPort')}>
-          <input
-            className={inputCls}
-            type="number"
-            value={form.amqpPort}
-            onChange={(e) => setForm((s) => ({ ...s, amqpPort: Number(e.target.value) || 0 }))}
-          />
-        </Field>
         <Field label={t('dialog.labelMgmtPort')}>
           <input
             className={inputCls}
             type="number"
             value={form.mgmtPort}
             onChange={(e) => setForm((s) => ({ ...s, mgmtPort: Number(e.target.value) || 0 }))}
+          />
+        </Field>
+        <Field label={t('dialog.labelAmqpPort')}>
+          <input
+            className={inputCls}
+            type="number"
+            placeholder={t('dialog.amqpPortPlaceholder')}
+            value={form.amqpPort}
+            onChange={(e) => setForm((s) => ({ ...s, amqpPort: e.target.value }))}
           />
         </Field>
         <Field label={t('dialog.labelUsername')}>
@@ -174,7 +185,7 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
           />
         </Field>
         <Field label={t('dialog.labelTls')}>
-          <label className="mt-1 inline-flex items-center gap-2 text-sm">
+          <label className="mt-1 flex h-[34px] items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.tls}

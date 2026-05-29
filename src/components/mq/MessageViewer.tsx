@@ -34,7 +34,7 @@ export function MessageViewer({
     setLoading(true)
     setError(null)
     try {
-      const res = await api.peekMessages(connection, queue.name, count, requeue)
+      const res = await api.peekMessages(connection, queue.vhost, queue.name, count, requeue)
       setMessages(res)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

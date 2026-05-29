@@ -2,17 +2,17 @@ use serde::{Deserialize, Serialize};
 
 /// Persisted RabbitMQ connection profile.
 ///
-/// AMQP is reached on (`host`, `amqp_port`), Management HTTP API on
-/// (`host`, `mgmt_port`). The same credentials are used for both — RabbitMQ
-/// shares its internal users between the AMQP plane and the management plugin.
+/// All broker interaction goes through the Management HTTP plugin on
+/// (`host`, `mgmt_port`). `amqp_port` is kept around purely as metadata so the
+/// UI can surface it; we don't open AMQP sockets ourselves.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RabbitConnection {
     pub id: String,
     pub name: String,
     pub host: String,
-    #[serde(default = "default_amqp_port")]
-    pub amqp_port: u16,
+    #[serde(default)]
+    pub amqp_port: Option<u16>,
     #[serde(default = "default_mgmt_port")]
     pub mgmt_port: u16,
     pub username: String,
@@ -25,44 +25,21 @@ pub struct RabbitConnection {
     pub created_at: i64,
 }
 
-fn default_amqp_port() -> u16 { 5672 }
 fn default_mgmt_port() -> u16 { 15672 }
 fn default_vhost() -> String { "/".to_string() }
 
 impl RabbitConnection {
-    pub fn amqp_uri(&self) -> String {
-        let scheme = if self.tls { "amqps" } else { "amqp" };
-        let user = urlencode(&self.username);
-        let pass = urlencode(&self.password);
-        let vhost = urlencode(self.vhost.trim_start_matches('/'));
-        format!(
-            "{scheme}://{user}:{pass}@{host}:{port}/{vhost}",
-            scheme = scheme,
-            user = user,
-            pass = pass,
-            host = self.host,
-            port = self.amqp_port,
-            vhost = vhost,
-        )
-    }
-
     pub fn mgmt_base(&self) -> String {
         let scheme = if self.tls { "https" } else { "http" };
         format!("{scheme}://{}:{}", self.host, self.mgmt_port)
     }
 }
 
-fn urlencode(s: &str) -> String {
-    // Lightweight: only encode characters that break URI userinfo / vhost segments.
-    let mut out = String::with_capacity(s.len());
-    for b in s.bytes() {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
-            _ => out.push_str(&format!("%{:02X}", b)),
-        }
-    }
-    out
-}
+// NOTE on field naming:
+// The RabbitMQ Management API returns snake_case JSON. The frontend expects
+// camelCase. We keep `rename_all = "camelCase"` so the *outgoing* Tauri payload
+// is camelCase, and add `#[serde(alias = "snake_case")]` on each multi-word
+// field so we can still *deserialize* the broker's snake_case response.
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -71,15 +48,15 @@ pub struct QueueInfo {
     pub vhost: String,
     #[serde(default)]
     pub messages: u64,
-    #[serde(default)]
+    #[serde(default, alias = "messages_ready")]
     pub messages_ready: u64,
-    #[serde(default)]
+    #[serde(default, alias = "messages_unacknowledged")]
     pub messages_unacknowledged: u64,
     #[serde(default)]
     pub consumers: u64,
     #[serde(default)]
     pub durable: bool,
-    #[serde(default)]
+    #[serde(default, alias = "auto_delete")]
     pub auto_delete: bool,
     #[serde(default)]
     pub exclusive: bool,
@@ -98,7 +75,7 @@ pub struct ExchangeInfo {
     pub kind: String,
     #[serde(default)]
     pub durable: bool,
-    #[serde(default)]
+    #[serde(default, alias = "auto_delete")]
     pub auto_delete: bool,
     #[serde(default)]
     pub internal: bool,
@@ -110,9 +87,11 @@ pub struct BindingInfo {
     pub source: String,
     pub vhost: String,
     pub destination: String,
+    #[serde(alias = "destination_type")]
     pub destination_type: String,
+    #[serde(alias = "routing_key")]
     pub routing_key: String,
-    #[serde(default)]
+    #[serde(default, alias = "properties_key")]
     pub properties_key: String,
 }
 

@@ -32,13 +32,14 @@
     "editTitle": "编辑 RabbitMQ 连接",
     "labelName": "显示名称",
     "labelHost": "主机",
-    "labelAmqpPort": "AMQP 端口",
+    "labelAmqpPort": "AMQP 端口 (可选)",
+    "amqpPortPlaceholder": "5672 (本程序未使用)",
     "labelMgmtPort": "Mgmt 端口",
     "labelUsername": "用户名",
     "labelPassword": "密码",
     "labelVhost": "虚拟主机 (vhost)",
     "labelTls": "TLS",
-    "labelTlsHint": "管理 API 同步使用 amqps + https",
+    "labelTlsHint": "管理地址使用 https:// 时勾选",
     "placeholderName": "例如：本地 RabbitMQ",
     "testConnection": "测试连接",
     "testing": "测试中…",
@@ -149,8 +150,9 @@
     "body": "消息体",
     "send": "发送",
     "sending": "发送中…",
-    "success": "发布成功（含 publisher confirms）。",
-    "hint": "通过 lapin 发布并等待 publisher confirms；失败信息会显示在此处。"
+    "success": "发布成功，broker 已路由至至少一个队列。",
+    "unrouted": "发布完成，但没有队列匹配该路由键（消息被丢弃）。",
+    "hint": "通过管理插件 HTTP API 发送；失败信息会显示在此处。"
   },
   "usage": {
     "title": "快速上手",

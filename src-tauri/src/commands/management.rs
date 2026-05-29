@@ -40,12 +40,49 @@ async fn get_json<T: serde::de::DeserializeOwned>(
         .basic_auth(&c.username, Some(&c.password))
         .send()
         .await?;
-    if !resp.status().is_success() {
-        let s = resp.status();
-        let body = resp.text().await.unwrap_or_default();
-        return Err(AppError::msg(format!("HTTP {} {}: {}", s.as_u16(), url, body)));
+    let status = resp.status();
+    let ct = resp
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+    let body = resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        return Err(AppError::msg(format!(
+            "HTTP {} {}: {}",
+            status.as_u16(),
+            url,
+            preview(&body),
+        )));
     }
-    Ok(resp.json::<T>().await?)
+    // Surface a clear error when the server (often a reverse proxy / WAF) returns
+    // a non-JSON 2xx response (e.g. an HTML login page).
+    if !ct.contains("json") && !looks_like_json(&body) {
+        return Err(AppError::msg(format!(
+            "{} returned content-type {:?} (expected JSON). Body preview: {}",
+            url,
+            ct,
+            preview(&body),
+        )));
+    }
+    serde_json::from_str::<T>(&body).map_err(|e| {
+        AppError::msg(format!("decode {}: {} -- body preview: {}", url, e, preview(&body)))
+    })
+}
+
+fn looks_like_json(s: &str) -> bool {
+    let t = s.trim_start();
+    t.starts_with('{') || t.starts_with('[')
+}
+
+fn preview(s: &str) -> String {
+    let trimmed = s.trim();
+    if trimmed.len() <= 240 {
+        trimmed.to_string()
+    } else {
+        format!("{}…(+{} bytes)", &trimmed[..240], trimmed.len() - 240)
+    }
 }
 
 #[tauri::command]

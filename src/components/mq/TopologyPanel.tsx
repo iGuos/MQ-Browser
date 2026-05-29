@@ -159,7 +159,7 @@ export function TopologyPanel() {
         ) : detailTab === 'bindings' ? (
           <BindingList slice={slice ?? null} />
         ) : (
-          <PublishDialog connection={selected} slice={slice ?? null} />
+          <PublishDialog connection={selected} vhost={activeVhost} slice={slice ?? null} />
         )}
       </div>
     </div>

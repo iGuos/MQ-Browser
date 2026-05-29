@@ -7,9 +7,11 @@ type Slice = { exchanges: ExchangeInfo[] } | null
 
 export function PublishDialog({
   connection,
+  vhost,
   slice,
 }: {
   connection: RabbitConnection
+  vhost: string | null
   slice: Slice
 }) {
   const { t } = useTranslation()
@@ -27,7 +29,8 @@ export function PublishDialog({
     setSending(true)
     setResult(null)
     try {
-      await api.publishMessage(connection, {
+      const targetVhost = vhost ?? connection.vhost
+      const routed = await api.publishMessage(connection, targetVhost, {
         exchange,
         routingKey,
         body,
@@ -35,7 +38,10 @@ export function PublishDialog({
         contentType: contentType || undefined,
         headers: {},
       })
-      setResult({ ok: true, msg: t('publish.success') })
+      setResult({
+        ok: true,
+        msg: routed ? t('publish.success') : t('publish.unrouted'),
+      })
     } catch (e) {
       setResult({ ok: false, msg: e instanceof Error ? e.message : String(e) })
     } finally {

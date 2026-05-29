@@ -1,14 +1,15 @@
 /**
  * Persisted RabbitMQ connection profile.
  *
- * AMQP traffic is sent to (`host`, `amqpPort`); the management plugin's HTTP
- * API is reached at (`host`, `mgmtPort`). The same credentials cover both.
+ * All broker calls go through the management HTTP plugin at
+ * (`host`, `mgmtPort`). `amqpPort` is optional metadata only — kept so the UI
+ * can display the broker's AMQP port if the operator wants to record it.
  */
 export interface RabbitConnection {
   id: string
   name: string
   host: string
-  amqpPort: number
+  amqpPort?: number
   mgmtPort: number
   username: string
   password: string

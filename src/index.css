@@ -37,6 +37,26 @@
 
   #root select {
     @apply select-none;
+    /* Forces WebKit to render the popup with the correct light/dark surface
+       since native <option> elements don't inherit Tailwind classes. */
+    color-scheme: light;
+  }
+  html.dark #root select {
+    color-scheme: dark;
+  }
+  #root option {
+    @apply bg-white text-zinc-900;
+  }
+  html.dark #root option {
+    @apply bg-zinc-900 text-zinc-100;
+  }
+  #root option:checked,
+  #root option:hover {
+    @apply bg-zinc-100 text-zinc-900;
+  }
+  html.dark #root option:checked,
+  html.dark #root option:hover {
+    @apply bg-zinc-800 text-zinc-100;
   }
 
   body {
