@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ChannelInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
@@ -41,6 +43,17 @@ export function ChannelList({
     )
   }, [slice, filter])
 
+  type SortKey =
+    | 'name'
+    | 'user'
+    | 'vhost'
+    | 'consumerCount'
+    | 'messagesUnacknowledged'
+    | 'messagesUnconfirmed'
+    | 'prefetchCount'
+    | 'state'
+  const { sorted, sort, toggle } = useSortable<ChannelInfo, SortKey>(filtered)
+
   if (slice?.status === 'loading' && filtered.length === 0) {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
   }
@@ -63,19 +76,47 @@ export function ChannelList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('channels.col.name')}</Th>
-              <Th>{t('channels.col.user')}</Th>
-              <Th>{t('channels.col.vhost')}</Th>
-              <Th align="right">{t('channels.col.consumers')}</Th>
-              <Th align="right">{t('channels.col.unacked')}</Th>
-              <Th align="right">{t('channels.col.unconfirmed')}</Th>
-              <Th align="right">{t('channels.col.prefetch')}</Th>
-              <Th>{t('channels.col.state')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
+                {t('channels.col.name')}
+              </SortableTh>
+              <SortableTh sortKey="user" sortState={sort} onSort={toggle}>
+                {t('channels.col.user')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('channels.col.vhost')}
+              </SortableTh>
+              <SortableTh sortKey="consumerCount" sortState={sort} onSort={toggle} align="right">
+                {t('channels.col.consumers')}
+              </SortableTh>
+              <SortableTh
+                sortKey="messagesUnacknowledged"
+                sortState={sort}
+                onSort={toggle}
+                align="right"
+              >
+                {t('channels.col.unacked')}
+              </SortableTh>
+              <SortableTh
+                sortKey="messagesUnconfirmed"
+                sortState={sort}
+                onSort={toggle}
+                align="right"
+              >
+                {t('channels.col.unconfirmed')}
+              </SortableTh>
+              <SortableTh sortKey="prefetchCount" sortState={sort} onSort={toggle} align="right">
+                {t('channels.col.prefetch')}
+              </SortableTh>
+              <SortableTh sortKey="state" sortState={sort} onSort={toggle}>
+                {t('channels.col.state')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
+            {sorted.map((c) => (
               <tr
                 key={c.name}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -148,14 +189,6 @@ export function ChannelList({
         {t('channels.closeConfirmDetail', { name: confirmClose?.name ?? '' })}
       </Modal>
     </div>
-  )
-}
-
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
-  return (
-    <th className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
-    </th>
   )
 }
 

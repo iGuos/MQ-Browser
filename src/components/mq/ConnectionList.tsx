@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RabbitConnection, RuntimeConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
@@ -42,6 +44,9 @@ export function ConnectionList({
     )
   }, [slice, filter])
 
+  type SortKey = 'peerHost' | 'user' | 'vhost' | 'protocol' | 'channels' | 'state'
+  const { sorted, sort, toggle } = useSortable<RuntimeConnection, SortKey>(filtered)
+
   if (slice?.status === 'loading' && filtered.length === 0) {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
   }
@@ -70,17 +75,31 @@ export function ConnectionList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('connections.col.peer')}</Th>
-              <Th>{t('connections.col.user')}</Th>
-              <Th>{t('connections.col.vhost')}</Th>
-              <Th>{t('connections.col.protocol')}</Th>
-              <Th align="right">{t('connections.col.channels')}</Th>
-              <Th>{t('connections.col.state')}</Th>
-              <Th align="right">{t('connections.col.actions')}</Th>
+              <SortableTh sortKey="peerHost" sortState={sort} onSort={toggle}>
+                {t('connections.col.peer')}
+              </SortableTh>
+              <SortableTh sortKey="user" sortState={sort} onSort={toggle}>
+                {t('connections.col.user')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('connections.col.vhost')}
+              </SortableTh>
+              <SortableTh sortKey="protocol" sortState={sort} onSort={toggle}>
+                {t('connections.col.protocol')}
+              </SortableTh>
+              <SortableTh sortKey="channels" sortState={sort} onSort={toggle} align="right">
+                {t('connections.col.channels')}
+              </SortableTh>
+              <SortableTh sortKey="state" sortState={sort} onSort={toggle}>
+                {t('connections.col.state')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('connections.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
+            {sorted.map((c) => (
               <tr
                 key={c.name}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -152,14 +171,6 @@ export function ConnectionList({
         {t('connections.closeConfirmDetail', { name: confirmClose?.name ?? '' })}
       </Modal>
     </div>
-  )
-}
-
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
-  return (
-    <th className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
-    </th>
   )
 }
 

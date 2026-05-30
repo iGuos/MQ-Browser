@@ -9,11 +9,9 @@ const TAB_BY_DIGIT: Record<string, DetailTab> = {
   '2': 'queues',
   '3': 'exchanges',
   '4': 'bindings',
-  '5': 'connections',
-  '6': 'channels',
-  '7': 'nodes',
-  '8': 'policies',
-  '9': 'publish',
+  '5': 'diagnostics',
+  '6': 'policies',
+  '7': 'publish',
 }
 
 interface Options {

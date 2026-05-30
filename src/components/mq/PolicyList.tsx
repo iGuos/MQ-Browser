@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import type { PolicyInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { Select } from '@/components/Select'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
@@ -60,6 +62,9 @@ export function PolicyList({
     )
   }, [slice, filter])
 
+  type SortKey = 'name' | 'vhost' | 'pattern' | 'applyTo' | 'priority'
+  const { sorted, sort, toggle } = useSortable<PolicyInfo, SortKey>(filtered)
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -85,17 +90,31 @@ export function PolicyList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('policies.col.name')}</Th>
-              <Th>{t('policies.col.vhost')}</Th>
-              <Th>{t('policies.col.pattern')}</Th>
-              <Th>{t('policies.col.applyTo')}</Th>
-              <Th align="right">{t('policies.col.priority')}</Th>
-              <Th>{t('policies.col.definition')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
+                {t('policies.col.name')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('policies.col.vhost')}
+              </SortableTh>
+              <SortableTh sortKey="pattern" sortState={sort} onSort={toggle}>
+                {t('policies.col.pattern')}
+              </SortableTh>
+              <SortableTh sortKey="applyTo" sortState={sort} onSort={toggle}>
+                {t('policies.col.applyTo')}
+              </SortableTh>
+              <SortableTh sortKey="priority" sortState={sort} onSort={toggle} align="right">
+                {t('policies.col.priority')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle}>
+                {t('policies.col.definition')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
+            {sorted.map((p) => (
               <tr
                 key={`${p.vhost}::${p.name}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -304,14 +323,6 @@ function coerceVal(s: string): unknown {
 
 const inputCls =
   'w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100'
-
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
-  return (
-    <th className={`px-3 py-2 text-[11px] font-semibold uppercase ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
-    </th>
-  )
-}
 
 function Td({ children, align }: { children: React.ReactNode; align?: 'right' }) {
   return (

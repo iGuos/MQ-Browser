@@ -8,6 +8,8 @@ import type {
 } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { Combobox } from '@/components/Select'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
@@ -102,6 +104,11 @@ function UsersSection({
     )
   }, [users, filter])
 
+  type UserSortKey = 'name' | 'tags' | 'hashingAlgorithm'
+  const { sorted, sort, toggle } = useSortable<UserInfo, UserSortKey>(filtered, {
+    getValue: (u, k) => (k === 'tags' ? u.tags.join(',') : u[k]),
+  })
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -127,14 +134,22 @@ function UsersSection({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('admin.users.col.name')}</Th>
-              <Th>{t('admin.users.col.tags')}</Th>
-              <Th>{t('admin.users.col.hash')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
+                {t('admin.users.col.name')}
+              </SortableTh>
+              <SortableTh sortKey="tags" sortState={sort} onSort={toggle}>
+                {t('admin.users.col.tags')}
+              </SortableTh>
+              <SortableTh sortKey="hashingAlgorithm" sortState={sort} onSort={toggle}>
+                {t('admin.users.col.hash')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
+            {sorted.map((u) => (
               <tr
                 key={u.name}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -356,6 +371,9 @@ function PermissionsSection({
     )
   }, [permissions, filter])
 
+  type PermSortKey = 'user' | 'vhost' | 'configure' | 'write' | 'read'
+  const { sorted, sort, toggle } = useSortable<PermissionInfo, PermSortKey>(filtered)
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -381,16 +399,28 @@ function PermissionsSection({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('admin.permissions.col.user')}</Th>
-              <Th>{t('admin.permissions.col.vhost')}</Th>
-              <Th>{t('admin.permissions.col.configure')}</Th>
-              <Th>{t('admin.permissions.col.write')}</Th>
-              <Th>{t('admin.permissions.col.read')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              <SortableTh sortKey="user" sortState={sort} onSort={toggle}>
+                {t('admin.permissions.col.user')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('admin.permissions.col.vhost')}
+              </SortableTh>
+              <SortableTh sortKey="configure" sortState={sort} onSort={toggle}>
+                {t('admin.permissions.col.configure')}
+              </SortableTh>
+              <SortableTh sortKey="write" sortState={sort} onSort={toggle}>
+                {t('admin.permissions.col.write')}
+              </SortableTh>
+              <SortableTh sortKey="read" sortState={sort} onSort={toggle}>
+                {t('admin.permissions.col.read')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
+            {sorted.map((p) => (
               <tr
                 key={`${p.user}::${p.vhost}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -666,6 +696,8 @@ function VhostsSection({
   const vhosts = slice?.vhosts ?? []
   const [newName, setNewName] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<VhostInfo | null>(null)
+  type VhostSortKey = 'name' | 'tracing'
+  const { sorted, sort, toggle } = useSortable<VhostInfo, VhostSortKey>(vhosts)
 
   return (
     <div className="space-y-3">
@@ -699,13 +731,19 @@ function VhostsSection({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('admin.vhosts.col.name')}</Th>
-              <Th>{t('admin.vhosts.col.tracing')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
+                {t('admin.vhosts.col.name')}
+              </SortableTh>
+              <SortableTh sortKey="tracing" sortState={sort} onSort={toggle}>
+                {t('admin.vhosts.col.tracing')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {vhosts.map((v) => (
+            {sorted.map((v) => (
               <tr
                 key={v.name}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -733,7 +771,7 @@ function VhostsSection({
                 </Td>
               </tr>
             ))}
-            {vhosts.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-3 py-6 text-center text-zinc-500">
                   {t('admin.vhosts.none')}
@@ -792,14 +830,6 @@ function TagBadge({ tag }: { tag: string }) {
 
 const inputCls =
   'w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100 disabled:opacity-50'
-
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
-  return (
-    <th className={`px-3 py-2 text-[11px] font-semibold uppercase ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
-    </th>
-  )
-}
 
 function Td({ children, align }: { children: React.ReactNode; align?: 'right' }) {
   return (

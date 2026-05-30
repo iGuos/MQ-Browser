@@ -91,9 +91,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       'queues',
       'exchanges',
       'bindings',
-      'connections',
-      'channels',
-      'nodes',
+      'diagnostics',
       'policies',
       'publish',
     ]

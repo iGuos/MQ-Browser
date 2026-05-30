@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ConsumerInfo } from '@shared/types'
 import { exportCsv } from '@/lib/csv'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 
 type Slice =
   | {
@@ -26,6 +28,16 @@ export function ConsumerList({ slice }: { slice: Slice }) {
         c.channel.toLowerCase().includes(q),
     )
   }, [slice, filter])
+
+  type SortKey =
+    | 'queue'
+    | 'vhost'
+    | 'consumerTag'
+    | 'channel'
+    | 'prefetchCount'
+    | 'ackRequired'
+    | 'activityStatus'
+  const { sorted, sort, toggle } = useSortable<ConsumerInfo, SortKey>(filtered)
 
   if (slice?.status === 'loading' && filtered.length === 0) {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
@@ -72,17 +84,31 @@ export function ConsumerList({ slice }: { slice: Slice }) {
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <Th>{t('consumers.col.queue')}</Th>
-              <Th>{t('consumers.col.vhost')}</Th>
-              <Th>{t('consumers.col.tag')}</Th>
-              <Th>{t('consumers.col.channel')}</Th>
-              <Th align="right">{t('consumers.col.prefetch')}</Th>
-              <Th>{t('consumers.col.ack')}</Th>
-              <Th>{t('consumers.col.status')}</Th>
+              <SortableTh sortKey="queue" sortState={sort} onSort={toggle}>
+                {t('consumers.col.queue')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('consumers.col.vhost')}
+              </SortableTh>
+              <SortableTh sortKey="consumerTag" sortState={sort} onSort={toggle}>
+                {t('consumers.col.tag')}
+              </SortableTh>
+              <SortableTh sortKey="channel" sortState={sort} onSort={toggle}>
+                {t('consumers.col.channel')}
+              </SortableTh>
+              <SortableTh sortKey="prefetchCount" sortState={sort} onSort={toggle} align="right">
+                {t('consumers.col.prefetch')}
+              </SortableTh>
+              <SortableTh sortKey="ackRequired" sortState={sort} onSort={toggle}>
+                {t('consumers.col.ack')}
+              </SortableTh>
+              <SortableTh sortKey="activityStatus" sortState={sort} onSort={toggle}>
+                {t('consumers.col.status')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c, i) => (
+            {sorted.map((c, i) => (
               <tr
                 key={`${c.vhost}::${c.queue}::${c.consumerTag}::${i}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -133,14 +159,3 @@ export function ConsumerList({ slice }: { slice: Slice }) {
   )
 }
 
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
-  return (
-    <th
-      className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${
-        align === 'right' ? 'text-right' : ''
-      }`}
-    >
-      {children}
-    </th>
-  )
-}

@@ -7,6 +7,8 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { EmptyState } from '@/components/EmptyState'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { CreateExchangeDialog } from './CreateExchangeDialog'
 import { ExchangeDetailDrawer } from './ExchangeDetailDrawer'
 
@@ -39,6 +41,9 @@ export function ExchangeList({
     if (!q) return list
     return list.filter((x) => x.name.toLowerCase().includes(q) || x.type.toLowerCase().includes(q))
   }, [slice, filter])
+
+  type SortKey = 'name' | 'vhost' | 'type'
+  const { sorted, sort, toggle } = useSortable<ExchangeInfo, SortKey>(filtered)
 
   const total = slice?.exchanges?.length ?? 0
   if (total === 0 && slice?.status === 'ok') {
@@ -85,25 +90,25 @@ export function ExchangeList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
                 {t('exchanges.col.name')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
                 {t('exchanges.col.vhost')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="type" sortState={sort} onSort={toggle}>
                 {t('exchanges.col.type')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle}>
                 {t('exchanges.col.flags')}
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
                 {t('queues.col.actions')}
-              </th>
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((e) => (
+            {sorted.map((e) => (
               <tr
                 key={`${e.vhost}::${e.name}::${e.type}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"

@@ -8,6 +8,8 @@ import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
 import { EmptyState } from '@/components/EmptyState'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { CreateBindingDialog } from './CreateBindingDialog'
 
 type Slice =
@@ -46,6 +48,9 @@ export function BindingList({
         x.routingKey.toLowerCase().includes(q),
     )
   }, [slice, filter])
+
+  type SortKey = 'source' | 'destination' | 'destinationType' | 'routingKey' | 'vhost'
+  const { sorted, sort, toggle } = useSortable<BindingInfo, SortKey>(filtered)
 
   const total = slice?.bindings?.length ?? 0
   if (total === 0 && slice?.status === 'ok') {
@@ -94,28 +99,28 @@ export function BindingList({
         <table className="min-w-full text-xs">
           <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
             <tr>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              <SortableTh sortKey="source" sortState={sort} onSort={toggle}>
                 {t('bindings.col.source')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="destination" sortState={sort} onSort={toggle}>
                 {t('bindings.col.destination')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="destinationType" sortState={sort} onSort={toggle}>
                 {t('bindings.col.destinationType')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="routingKey" sortState={sort} onSort={toggle}>
                 {t('bindings.col.routingKey')}
-              </th>
-              <th className="px-3 py-2 text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
                 {t('bindings.col.vhost')}
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase">
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
                 {t('queues.col.actions')}
-              </th>
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((b, i) => (
+            {sorted.map((b, i) => (
               <tr
                 key={`${b.vhost}::${b.source}::${b.destination}::${b.routingKey}::${i}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"

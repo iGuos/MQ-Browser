@@ -13,7 +13,8 @@ import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
 import { EmptyState } from '@/components/EmptyState'
-import { InfoIcon } from '@/components/InfoIcon'
+import { SortableTh } from '@/components/SortableTh'
+import { useSortable } from '@/lib/sort'
 import { MessageViewer } from './MessageViewer'
 import { CreateQueueDialog } from './CreateQueueDialog'
 import { QueueDetailDrawer } from './QueueDetailDrawer'
@@ -50,7 +51,7 @@ export function QueueList({
   const [bulkConfirm, setBulkConfirm] = useState<null | 'purge' | 'delete'>(null)
 
   const keyOf = (q: QueueInfo) => `${q.vhost}::${q.name}`
-  const toggle = (q: QueueInfo) =>
+  const toggleSelection = (q: QueueInfo) =>
     setSelected((s) => {
       const next = new Set(s)
       const k = keyOf(q)
@@ -67,6 +68,16 @@ export function QueueList({
       (x) => x.name.toLowerCase().includes(q) || x.vhost.toLowerCase().includes(q),
     )
   }, [slice, filter])
+
+  type SortKey =
+    | 'name'
+    | 'vhost'
+    | 'messagesReady'
+    | 'messagesUnacknowledged'
+    | 'messages'
+    | 'consumers'
+    | 'state'
+  const { sorted, sort, toggle } = useSortable<QueueInfo, SortKey>(filtered)
 
   if (slice?.status === 'loading' && filtered.length === 0) {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
@@ -158,24 +169,52 @@ export function QueueList({
                   aria-label="Select all"
                 />
               </th>
-              <Th>{t('queues.col.name')}</Th>
-              <Th>{t('queues.col.vhost')}</Th>
-              <Th align="right" hint={t('queues.hint.ready')}>
+              <SortableTh sortKey="name" sortState={sort} onSort={toggle}>
+                {t('queues.col.name')}
+              </SortableTh>
+              <SortableTh sortKey="vhost" sortState={sort} onSort={toggle}>
+                {t('queues.col.vhost')}
+              </SortableTh>
+              <SortableTh
+                sortKey="messagesReady"
+                sortState={sort}
+                onSort={toggle}
+                align="right"
+                hint={t('queues.hint.ready')}
+              >
                 {t('queues.col.ready')}
-              </Th>
-              <Th align="right" hint={t('queues.hint.unacked')}>
+              </SortableTh>
+              <SortableTh
+                sortKey="messagesUnacknowledged"
+                sortState={sort}
+                onSort={toggle}
+                align="right"
+                hint={t('queues.hint.unacked')}
+              >
                 {t('queues.col.unacked')}
-              </Th>
-              <Th align="right" hint={t('queues.hint.total')}>
+              </SortableTh>
+              <SortableTh
+                sortKey="messages"
+                sortState={sort}
+                onSort={toggle}
+                align="right"
+                hint={t('queues.hint.total')}
+              >
                 {t('queues.col.total')}
-              </Th>
-              <Th align="right">{t('queues.col.consumers')}</Th>
-              <Th>{t('queues.col.state')}</Th>
-              <Th align="right">{t('queues.col.actions')}</Th>
+              </SortableTh>
+              <SortableTh sortKey="consumers" sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.consumers')}
+              </SortableTh>
+              <SortableTh sortKey="state" sortState={sort} onSort={toggle}>
+                {t('queues.col.state')}
+              </SortableTh>
+              <SortableTh sortKey={null} sortState={sort} onSort={toggle} align="right">
+                {t('queues.col.actions')}
+              </SortableTh>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((q) => (
+            {sorted.map((q) => (
               <tr
                 key={`${q.vhost}::${q.name}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
@@ -184,7 +223,7 @@ export function QueueList({
                   <input
                     type="checkbox"
                     checked={selected.has(keyOf(q))}
-                    onChange={() => toggle(q)}
+                    onChange={() => toggleSelection(q)}
                     aria-label={`Select ${q.name}`}
                   />
                 </td>
@@ -359,28 +398,6 @@ export function QueueList({
   )
 }
 
-function Th({
-  children,
-  align,
-  hint,
-}: {
-  children: React.ReactNode
-  align?: 'right'
-  hint?: string
-}) {
-  return (
-    <th
-      className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${
-        align === 'right' ? 'text-right' : ''
-      }`}
-    >
-      <span className={`inline-flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
-        {children}
-        {hint ? <InfoIcon hint={hint} /> : null}
-      </span>
-    </th>
-  )
-}
 
 function Td({ children, align }: { children: React.ReactNode; align?: 'right' }) {
   return (

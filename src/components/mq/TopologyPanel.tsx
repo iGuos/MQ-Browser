@@ -8,13 +8,9 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { QueueList } from './QueueList'
 import { ExchangeList } from './ExchangeList'
 import { BindingList } from './BindingList'
-import { ConnectionList } from './ConnectionList'
-import { ChannelList } from './ChannelList'
-import { ConsumerList } from './ConsumerList'
-import { NodeList } from './NodeList'
+import { DiagnosticsPanel } from './DiagnosticsPanel'
 import { PolicyList } from './PolicyList'
 import { AdminPanel } from './AdminPanel'
-import { RoutingTester } from './RoutingTester'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
@@ -26,12 +22,8 @@ const BASE_TAB_ORDER: DetailTab[] = [
   'queues',
   'exchanges',
   'bindings',
-  'connections',
-  'channels',
-  'consumers',
-  'nodes',
+  'diagnostics',
   'policies',
-  'routingTester',
   'publish',
 ]
 
@@ -195,16 +187,8 @@ export function TopologyPanel() {
           <ExchangeList connection={selected} slice={slice ?? null} />
         ) : detailTab === 'bindings' ? (
           <BindingList connection={selected} slice={slice ?? null} />
-        ) : detailTab === 'connections' ? (
-          <ConnectionList connection={selected} slice={slice ?? null} />
-        ) : detailTab === 'channels' ? (
-          <ChannelList connection={selected} slice={slice ?? null} />
-        ) : detailTab === 'consumers' ? (
-          <ConsumerList slice={slice ?? null} />
-        ) : detailTab === 'routingTester' ? (
-          <RoutingTester slice={slice ?? null} />
-        ) : detailTab === 'nodes' ? (
-          <NodeList slice={slice ?? null} />
+        ) : detailTab === 'diagnostics' ? (
+          <DiagnosticsPanel connection={selected} slice={slice ?? null} />
         ) : detailTab === 'policies' ? (
           <PolicyList connection={selected} slice={slice ?? null} />
         ) : detailTab === 'admin' && isAdmin ? (

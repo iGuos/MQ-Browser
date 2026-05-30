@@ -97,7 +97,8 @@
       "policies": "Policies",
       "admin": "Admin",
       "consumers": "Consumers",
-      "routingTester": "Routing tester"
+      "routingTester": "Routing tester",
+      "diagnostics": "Diagnostics"
     },
     "empty": {
       "title": "Pick a connection",

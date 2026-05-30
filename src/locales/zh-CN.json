@@ -97,7 +97,8 @@
       "policies": "策略",
       "admin": "管理",
       "consumers": "消费者",
-      "routingTester": "路由测试"
+      "routingTester": "路由测试",
+      "diagnostics": "诊断"
     },
     "empty": {
       "title": "请选择一个连接",
