@@ -215,17 +215,24 @@ export interface PublishPayload {
   persistent: boolean
   contentType?: string
   headers: Record<string, string>
+  /** Per-message TTL in milliseconds. Omitted = no TTL. */
+  expirationMs?: number
 }
 
 export interface PublishTemplate {
   id: string
   name: string
+  /** "queue" | "exchange" — which target mode the template was saved in. */
+  target?: 'queue' | 'exchange'
+  /** Used when target === 'queue'. */
+  queueName?: string
   exchange: string
   routingKey: string
   body: string
   persistent: boolean
   contentType?: string
   headers: Record<string, string>
+  expirationMs?: number
 }
 
 /** Discriminator for the right-hand detail panel. */

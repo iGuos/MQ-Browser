@@ -1,21 +1,30 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BindingInfo, ExchangeInfo, RabbitConnection } from '@shared/types'
+import type {
+  BindingInfo,
+  ConsumerInfo,
+  ExchangeInfo,
+  QueueInfo,
+  RabbitConnection,
+} from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { EmptyState } from '@/components/EmptyState'
+import { CopyButton } from '@/components/CopyButton'
 import { SortableTh } from '@/components/SortableTh'
 import { useSortable } from '@/lib/sort'
 import { CreateExchangeDialog } from './CreateExchangeDialog'
-import { ExchangeDetailDrawer } from './ExchangeDetailDrawer'
+import { EntityDrillDrawer } from './EntityDrillDrawer'
 
 type Slice =
   | {
       exchanges: ExchangeInfo[]
+      queues?: QueueInfo[]
       bindings?: BindingInfo[]
+      consumers?: ConsumerInfo[]
       status: 'idle' | 'loading' | 'ok' | 'error'
     }
   | null
@@ -114,13 +123,16 @@ export function ExchangeList({
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
               >
                 <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => setDetailTarget(e)}
-                    className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
-                  >
-                    {e.name || <span className="text-zinc-500">(AMQP default)</span>}
-                  </button>
+                  <span className="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDetailTarget(e)}
+                      className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
+                    >
+                      {e.name || <span className="text-zinc-500">(AMQP default)</span>}
+                    </button>
+                    {e.name ? <CopyButton value={e.name} /> : null}
+                  </span>
                 </td>
                 <td className="px-3 py-2 font-mono">{e.vhost}</td>
                 <td className="px-3 py-2">
@@ -166,10 +178,16 @@ export function ExchangeList({
         onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
       />
 
-      <ExchangeDetailDrawer
-        open={detailTarget !== null}
-        exchange={detailTarget}
-        allBindings={slice?.bindings ?? []}
+      <EntityDrillDrawer
+        initial={
+          detailTarget
+            ? { kind: 'exchange', vhost: detailTarget.vhost, name: detailTarget.name }
+            : null
+        }
+        queues={slice?.queues ?? []}
+        exchanges={slice?.exchanges ?? []}
+        bindings={slice?.bindings ?? []}
+        consumers={slice?.consumers ?? []}
         onClose={() => setDetailTarget(null)}
       />
 
@@ -192,3 +210,4 @@ export function ExchangeList({
     </div>
   )
 }
+

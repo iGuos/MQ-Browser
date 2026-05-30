@@ -243,11 +243,22 @@
     "importSuccess": "定义已导入。"
   },
   "publish": {
+    "target": {
+      "queue": "队列",
+      "exchange": "Exchange",
+      "queueHint": "直接发到队列（走默认 Exchange）。",
+      "exchangeHint": "发到 Exchange，按路由键路由。"
+    },
+    "targetQueue": "目标队列",
+    "targetQueueHint": "经默认 Exchange 转发，路由键 = 队列名。",
     "exchange": "Exchange",
     "exchangePlaceholder": "(留空即使用 AMQP 默认 Exchange)",
     "routingKey": "路由键",
     "routingKeyPlaceholder": "使用默认 Exchange 时填写队列名",
     "contentType": "Content-Type",
+    "expiration": "TTL (毫秒)",
+    "expirationPlaceholder": "留空表示不限时",
+    "expirationHumanized": "约 {{human}}",
     "persistent": "持久化 (delivery_mode=2)",
     "body": "消息体",
     "send": "发送",
@@ -384,6 +395,29 @@
       "deleteConfirmDetail": "删除 vhost “{{name}}”，其下的所有队列 / Exchange / 绑定都将被一并删除。",
       "deleted": "已删除 vhost “{{name}}”"
     }
+  },
+  "copyButton": {
+    "title": "复制到剪贴板"
+  },
+  "rkAdvice": {
+    "direct": "Direct：路由键必须完全相等才命中。",
+    "directPlaceholder": "精确字符串，如 orders.created",
+    "topicBinding": "Topic 绑定：用 * 匹配恰好一段（点号分隔），# 匹配零或多段。例：orders.*.us 匹配 orders.created.us；logs.# 匹配 logs、logs.error、logs.db.slow。",
+    "topicBindingPlaceholder": "通配 pattern，如 orders.*.us 或 logs.#",
+    "topicPublish": "Topic 发布：填字面路由键（不要写 * 或 #），由 broker 按段匹配各绑定 pattern。",
+    "topicPublishPlaceholder": "字面路由键，如 orders.created.us",
+    "fanout": "Fanout 广播到全部绑定，路由键被忽略。",
+    "fanoutPlaceholder": "Fanout 忽略路由键",
+    "headers": "Headers 通过消息 header 匹配，路由键不参与。",
+    "headersPlaceholder": "Headers 忽略路由键",
+    "unknown": "自定义或未知类型，路由行为取决于具体插件。",
+    "unknownPlaceholder": ""
+  },
+  "drill": {
+    "back": "返回",
+    "openQueue": "查看该队列",
+    "openExchange": "查看该 Exchange",
+    "notFound": "在当前数据中找不到 “{{name}}”（可能已被删除或在其它 vhost）。"
   },
   "validation": {
     "name": {

@@ -4,6 +4,7 @@ import type { BindingInfo, ExchangeInfo, QueueInfo, RabbitConnection } from '@sh
 import { Modal } from '@/components/Modal'
 import { Select, Combobox } from '@/components/Select'
 import { api } from '@/lib/tauri'
+import { rkAdviceFor } from '@/lib/exchangeRk'
 import { ArgumentRows } from './CreateQueueDialog'
 
 interface Props {
@@ -102,6 +103,9 @@ export function CreateBindingDialog({
           .filter((x) => x.name !== source)
           .map((x) => ({ value: x.name, label: x.name || '(default)', hint: x.type }))
 
+  const sourceExchange = sourceExchanges.find((x) => x.name === source.trim())
+  const rkAdvice = rkAdviceFor(sourceExchange?.type, 'binding')
+
   return (
     <Modal
       open={open}
@@ -138,34 +142,49 @@ export function CreateBindingDialog({
             inputClassName={inputCls}
           />
         </Field>
-        <Field label={t('create.binding.destinationType')}>
-          <Select
-            value={destType}
-            onChange={(v) => setDestType(v as 'queue' | 'exchange')}
-            options={[
-              { value: 'queue', label: t('create.binding.destQueue') },
-              { value: 'exchange', label: t('create.binding.destExchange') },
-            ]}
-            size="md"
-          />
-        </Field>
-        <Field label={t('create.binding.destination')}>
-          <Combobox
-            value={destination}
-            onChange={setDestination}
-            options={destOptions}
-            placeholder={destType === 'queue' ? 'queue name' : 'exchange name'}
-            inputClassName={inputCls}
-          />
-        </Field>
-        <Field label={t('create.binding.routingKey')}>
-          <input
-            className={inputCls}
-            value={routingKey}
-            onChange={(e) => setRoutingKey(e.target.value)}
-            placeholder=""
-          />
-        </Field>
+        <div className="grid grid-cols-[7rem_1fr] gap-2">
+          <Field label={t('create.binding.destinationType')}>
+            <Select
+              value={destType}
+              onChange={(v) => setDestType(v as 'queue' | 'exchange')}
+              options={[
+                { value: 'queue', label: t('create.binding.destQueue') },
+                { value: 'exchange', label: t('create.binding.destExchange') },
+              ]}
+              size="md"
+              className="w-full"
+            />
+          </Field>
+          <Field label={t('create.binding.destination')}>
+            <Combobox
+              value={destination}
+              onChange={setDestination}
+              options={destOptions}
+              placeholder={destType === 'queue' ? 'queue name' : 'exchange name'}
+              inputClassName={inputCls}
+            />
+          </Field>
+        </div>
+        <label className="block">
+          <span className="flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            {t('create.binding.routingKey')}
+            {sourceExchange ? (
+              <span className="rounded bg-zinc-200/70 px-1 py-0 text-[9px] font-normal uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {sourceExchange.type}
+              </span>
+            ) : null}
+          </span>
+          <div className="mt-1">
+            <input
+              className={`${inputCls} ${rkAdvice.disabled ? 'opacity-50' : ''}`}
+              value={routingKey}
+              onChange={(e) => setRoutingKey(e.target.value)}
+              placeholder={t(rkAdvice.placeholderKey)}
+              disabled={rkAdvice.disabled}
+            />
+          </div>
+          <p className="mt-1 text-[10px] text-zinc-500">{t(rkAdvice.hintKey)}</p>
+        </label>
 
         <ArgumentRows rows={argRows} onChange={setArgRows} label={t('create.binding.arguments')} />
 

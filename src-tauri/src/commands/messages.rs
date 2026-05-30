@@ -135,6 +135,10 @@ pub struct PublishPayload {
     pub content_type: Option<String>,
     #[serde(default)]
     pub headers: std::collections::HashMap<String, String>,
+    /// Per-message TTL in milliseconds. AMQP encodes this as a shortstr; we
+    /// forward it as a decimal string. Empty / missing = no TTL.
+    #[serde(default)]
+    pub expiration_ms: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,6 +170,10 @@ pub async fn publish_message(
     }
     if !payload.headers.is_empty() {
         properties.insert("headers".into(), json!(payload.headers));
+    }
+    if let Some(ms) = payload.expiration_ms {
+        // AMQP expiration is a shortstr containing decimal milliseconds.
+        properties.insert("expiration".into(), json!(ms.to_string()));
     }
 
     let req = json!({

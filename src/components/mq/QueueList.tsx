@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type {
   BindingInfo,
   ConsumerInfo,
+  ExchangeInfo,
   QueueInfo,
   RabbitConnection,
 } from '@shared/types'
@@ -13,15 +14,17 @@ import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
 import { EmptyState } from '@/components/EmptyState'
+import { CopyButton } from '@/components/CopyButton'
 import { SortableTh } from '@/components/SortableTh'
 import { useSortable } from '@/lib/sort'
 import { MessageViewer } from './MessageViewer'
 import { CreateQueueDialog } from './CreateQueueDialog'
-import { QueueDetailDrawer } from './QueueDetailDrawer'
+import { EntityDrillDrawer } from './EntityDrillDrawer'
 
 type Slice =
   | {
       queues: QueueInfo[]
+      exchanges?: ExchangeInfo[]
       bindings?: BindingInfo[]
       consumers?: ConsumerInfo[]
       status: 'idle' | 'loading' | 'ok' | 'error'
@@ -237,13 +240,16 @@ export function QueueList({
                   />
                 </td>
                 <Td>
-                  <button
-                    type="button"
-                    onClick={() => setDetailTarget(q)}
-                    className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
-                  >
-                    {q.name}
-                  </button>
+                  <span className="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDetailTarget(q)}
+                      className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
+                    >
+                      {q.name}
+                    </button>
+                    <CopyButton value={q.name} />
+                  </span>
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {q.durable ? <Badge>durable</Badge> : null}
                     {q.autoDelete ? <Badge>auto-delete</Badge> : null}
@@ -356,11 +362,14 @@ export function QueueList({
         onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
       />
 
-      <QueueDetailDrawer
-        open={detailTarget !== null}
-        queue={detailTarget}
-        allBindings={slice?.bindings ?? []}
-        allConsumers={slice?.consumers ?? []}
+      <EntityDrillDrawer
+        initial={
+          detailTarget ? { kind: 'queue', vhost: detailTarget.vhost, name: detailTarget.name } : null
+        }
+        queues={slice?.queues ?? []}
+        exchanges={slice?.exchanges ?? []}
+        bindings={slice?.bindings ?? []}
+        consumers={slice?.consumers ?? []}
         onClose={() => setDetailTarget(null)}
         onPeek={(q) => {
           setDetailTarget(null)

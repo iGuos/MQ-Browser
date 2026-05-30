@@ -243,11 +243,22 @@
     "importSuccess": "Definitions imported."
   },
   "publish": {
+    "target": {
+      "queue": "Queue",
+      "exchange": "Exchange",
+      "queueHint": "Send directly to a queue (via default exchange).",
+      "exchangeHint": "Send to an exchange with a routing key."
+    },
+    "targetQueue": "Target queue",
+    "targetQueueHint": "Routed through the default exchange — routing key is the queue name.",
     "exchange": "Exchange",
     "exchangePlaceholder": "(empty = AMQP default exchange)",
     "routingKey": "Routing key",
     "routingKeyPlaceholder": "queue name when using default exchange",
     "contentType": "Content type",
+    "expiration": "TTL (ms)",
+    "expirationPlaceholder": "blank = no TTL",
+    "expirationHumanized": "≈ {{human}}",
     "persistent": "Persistent (delivery_mode=2)",
     "body": "Body",
     "send": "Publish",
@@ -384,6 +395,29 @@
       "deleteConfirmDetail": "Delete vhost \"{{name}}\". All queues/exchanges/bindings under it are removed.",
       "deleted": "Deleted vhost \"{{name}}\""
     }
+  },
+  "copyButton": {
+    "title": "Copy to clipboard"
+  },
+  "rkAdvice": {
+    "direct": "Direct: messages route to bindings whose key matches exactly.",
+    "directPlaceholder": "exact key (e.g. orders.created)",
+    "topicBinding": "Topic binding: * matches exactly one dot-separated segment, # matches zero or more segments. e.g. orders.*.us matches orders.created.us; logs.# matches logs, logs.error, logs.db.slow.",
+    "topicBindingPlaceholder": "wildcard pattern, e.g. orders.*.us or logs.#",
+    "topicPublish": "Topic publish: use a literal routing key (no * or #); the broker matches it against each binding's pattern segment by segment.",
+    "topicPublishPlaceholder": "literal key, e.g. orders.created.us",
+    "fanout": "Fanout broadcasts to all bindings — routing key is ignored.",
+    "fanoutPlaceholder": "ignored by fanout",
+    "headers": "Headers exchange matches on message headers, not routing key.",
+    "headersPlaceholder": "ignored by headers",
+    "unknown": "Custom or unknown exchange type — routing key behavior depends on the broker plugin.",
+    "unknownPlaceholder": ""
+  },
+  "drill": {
+    "back": "Back",
+    "openQueue": "Open this queue",
+    "openExchange": "Open this exchange",
+    "notFound": "\"{{name}}\" was not found in the current dataset (it may have been deleted or live in another vhost)."
   },
   "validation": {
     "name": {
