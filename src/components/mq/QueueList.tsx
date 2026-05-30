@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   BindingInfo,
@@ -40,6 +40,7 @@ export function QueueList({
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const nav = useWorkspaceUiStore((s) => s.navByWs[workspaceId])
   const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
   const [peekTarget, setPeekTarget] = useState<QueueInfo | null>(null)
@@ -47,6 +48,14 @@ export function QueueList({
   const [confirmDelete, setConfirmDelete] = useState<QueueInfo | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [detailTarget, setDetailTarget] = useState<QueueInfo | null>(null)
+
+  // External nav can request a queue's detail drawer to open.
+  useEffect(() => {
+    if (!nav?.openQueueName) return
+    const q = (slice?.queues ?? []).find((x) => x.name === nav.openQueueName)
+    if (q) setDetailTarget(q)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav?.nonce])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState<null | 'purge' | 'delete'>(null)
 

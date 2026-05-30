@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RabbitConnection, RuntimeConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
@@ -27,10 +27,19 @@ export function ConnectionList({
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const nav = useWorkspaceUiStore((s) => s.navByWs[workspaceId])
+  const navigateTo = useWorkspaceUiStore((s) => s.navigateTo)
   const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
   const [confirmClose, setConfirmClose] = useState<RuntimeConnection | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // React to navigation requests targeting this sub-tab.
+  useEffect(() => {
+    if (!nav) return
+    if (nav.diagnosticsSection === 'connections') setFilter(nav.filter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav?.nonce])
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -115,7 +124,25 @@ export function ConnectionList({
                   <span className="font-mono">{c.vhost}</span>
                 </Td>
                 <Td>{c.protocol}</Td>
-                <Td align="right">{c.channels}</Td>
+                <Td align="right">
+                  {c.channels > 0 ? (
+                    <button
+                      type="button"
+                      title={t('connections.viewChannels')}
+                      onClick={() =>
+                        navigateTo(workspaceId, {
+                          diagnosticsSection: 'channels',
+                          filter: c.name,
+                        })
+                      }
+                      className="rounded px-1 text-cyan-700 hover:bg-cyan-500/10 hover:underline dark:text-cyan-300"
+                    >
+                      {c.channels}
+                    </button>
+                  ) : (
+                    <span className="text-zinc-500">0</span>
+                  )}
+                </Td>
                 <Td>
                   <span
                     className={

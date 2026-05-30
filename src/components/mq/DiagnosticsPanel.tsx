@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import type {
   BindingInfo,
   ChannelInfo,
@@ -42,7 +44,16 @@ interface Props {
  */
 export function DiagnosticsPanel({ connection, slice, initialSection }: Props) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const nav = useWorkspaceUiStore((s) => s.navByWs[workspaceId])
   const [section, setSection] = useState<Section>(initialSection ?? 'connections')
+
+  // External nav requests can switch the active sub-tab. The child list reacts
+  // to the same nonce and prefills its filter.
+  useEffect(() => {
+    if (nav?.diagnosticsSection) setSection(nav.diagnosticsSection as Section)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav?.nonce])
 
   const counts: Record<Section, number> = {
     connections: slice?.runtimeConnections.length ?? 0,

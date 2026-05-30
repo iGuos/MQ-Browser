@@ -13,6 +13,32 @@ export interface AutoRefresh {
 
 export const DEFAULT_AUTO_REFRESH: AutoRefresh = { enabled: false, intervalMs: 10_000 }
 
+export type DiagnosticsSection =
+  | 'connections'
+  | 'channels'
+  | 'consumers'
+  | 'nodes'
+  | 'routingTester'
+
+/** Cross-component navigation request. Components listen on `nonce` and apply
+ *  the relevant fields. */
+export interface NavTarget {
+  diagnosticsSection: DiagnosticsSection | null
+  /** Prefill the destination list's filter input. */
+  filter: string
+  /** When set + detail tab is `queues`, the queue list opens that queue's drawer. */
+  openQueueName: string | null
+  /** Monotonic counter — used as effect dependency to trigger consumers. */
+  nonce: number
+}
+
+const EMPTY_NAV: NavTarget = {
+  diagnosticsSection: null,
+  filter: '',
+  openQueueName: null,
+  nonce: 0,
+}
+
 type State = {
   workspaceOrder: string[]
   activeWorkspaceId: string
@@ -24,6 +50,8 @@ type State = {
   detailTabByWs: Record<string, DetailTab>
   /** Auto-refresh config per workspace. */
   autoRefreshByWs: Record<string, AutoRefresh>
+  /** Pending navigation request per workspace. */
+  navByWs: Record<string, NavTarget>
 }
 
 type Actions = {
@@ -35,6 +63,11 @@ type Actions = {
   setActiveVhost: (workspaceId: string, vhost: string | null) => void
   setDetailTab: (workspaceId: string, tab: DetailTab) => void
   setAutoRefresh: (workspaceId: string, patch: Partial<AutoRefresh>) => void
+  /** Dispatch a navigation request to the active workspace. */
+  navigateTo: (
+    workspaceId: string,
+    target: Partial<Omit<NavTarget, 'nonce'>> & { detailTab?: DetailTab },
+  ) => void
   pruneSelectionsAfterHydrate: (list: RabbitConnection[]) => void
 }
 
@@ -51,6 +84,7 @@ export const useWorkspaceUiStore = create<State & Actions>()(
   activeVhostByWs: { [DEFAULT_WORKSPACE_ID]: null },
   detailTabByWs: { [DEFAULT_WORKSPACE_ID]: 'queues' },
   autoRefreshByWs: { [DEFAULT_WORKSPACE_ID]: { ...DEFAULT_AUTO_REFRESH } },
+  navByWs: { [DEFAULT_WORKSPACE_ID]: { ...EMPTY_NAV } },
 
   setActiveWorkspace: (id) => {
     if (!get().workspaceOrder.includes(id)) return
@@ -65,6 +99,7 @@ export const useWorkspaceUiStore = create<State & Actions>()(
       activeVhostByWs,
       detailTabByWs,
       autoRefreshByWs,
+      navByWs,
     } = get()
     const nid = newWorkspaceId()
     set({
@@ -86,6 +121,7 @@ export const useWorkspaceUiStore = create<State & Actions>()(
         ...autoRefreshByWs,
         [nid]: { ...(autoRefreshByWs[activeWorkspaceId] ?? DEFAULT_AUTO_REFRESH) },
       },
+      navByWs: { ...navByWs, [nid]: { ...EMPTY_NAV } },
     })
   },
 
@@ -97,6 +133,7 @@ export const useWorkspaceUiStore = create<State & Actions>()(
       activeVhostByWs,
       detailTabByWs,
       autoRefreshByWs,
+      navByWs,
     } = get()
     if (workspaceOrder.length <= 1) return
     const idx = workspaceOrder.indexOf(workspaceId)
@@ -107,10 +144,12 @@ export const useWorkspaceUiStore = create<State & Actions>()(
     const nextVhost = { ...activeVhostByWs }
     const nextTab = { ...detailTabByWs }
     const nextAuto = { ...autoRefreshByWs }
+    const nextNav = { ...navByWs }
     delete nextSel[workspaceId]
     delete nextVhost[workspaceId]
     delete nextTab[workspaceId]
     delete nextAuto[workspaceId]
+    delete nextNav[workspaceId]
     releaseTopologyWorkspace(workspaceId)
 
     let nextActive = activeWorkspaceId
@@ -125,6 +164,7 @@ export const useWorkspaceUiStore = create<State & Actions>()(
       activeVhostByWs: nextVhost,
       detailTabByWs: nextTab,
       autoRefreshByWs: nextAuto,
+      navByWs: nextNav,
     })
   },
 
@@ -155,6 +195,25 @@ export const useWorkspaceUiStore = create<State & Actions>()(
         },
       },
     })),
+
+  navigateTo: (workspaceId, target) =>
+    set((s) => {
+      const cur = s.navByWs[workspaceId] ?? EMPTY_NAV
+      const nextNav: NavTarget = {
+        diagnosticsSection:
+          target.diagnosticsSection !== undefined ? target.diagnosticsSection : null,
+        filter: target.filter ?? '',
+        openQueueName: target.openQueueName ?? null,
+        nonce: cur.nonce + 1,
+      }
+      const nextDetailTabByWs = target.detailTab
+        ? { ...s.detailTabByWs, [workspaceId]: target.detailTab }
+        : s.detailTabByWs
+      return {
+        navByWs: { ...s.navByWs, [workspaceId]: nextNav },
+        detailTabByWs: nextDetailTabByWs,
+      }
+    }),
 
   pruneSelectionsAfterHydrate: (list) => {
     const ids = new Set(list.map((x) => x.id))

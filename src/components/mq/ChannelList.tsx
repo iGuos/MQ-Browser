@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ChannelInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
@@ -27,9 +27,17 @@ export function ChannelList({
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const activeVhost = useWorkspaceUiStore((s) => s.activeVhostByWs[workspaceId] ?? null)
+  const nav = useWorkspaceUiStore((s) => s.navByWs[workspaceId])
+  const navigateTo = useWorkspaceUiStore((s) => s.navigateTo)
   const fetchTopology = useTopologyStore((s) => s.fetch)
   const [filter, setFilter] = useState('')
   const [confirmClose, setConfirmClose] = useState<ChannelInfo | null>(null)
+
+  useEffect(() => {
+    if (!nav) return
+    if (nav.diagnosticsSection === 'channels') setFilter(nav.filter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav?.nonce])
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -122,9 +130,15 @@ export function ChannelList({
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
               >
                 <Td>
-                  <span className="font-mono text-[10px] text-zinc-700 dark:text-zinc-300">
-                    {c.name}
-                  </span>
+                  <ChannelNameCell
+                    name={c.name}
+                    onJumpToConnection={(connName) =>
+                      navigateTo(workspaceId, {
+                        diagnosticsSection: 'connections',
+                        filter: connName,
+                      })
+                    }
+                  />
                 </Td>
                 <Td>{c.user}</Td>
                 <Td>
@@ -189,6 +203,41 @@ export function ChannelList({
         {t('channels.closeConfirmDetail', { name: confirmClose?.name ?? '' })}
       </Modal>
     </div>
+  )
+}
+
+/**
+ * Channel names look like `host:port -> brokerhost:port (N)`. The part before
+ * ` (N)` is the parent connection name. Render that prefix as a link.
+ */
+function ChannelNameCell({
+  name,
+  onJumpToConnection,
+}: {
+  name: string
+  onJumpToConnection: (connectionName: string) => void
+}) {
+  // Capture "<prefix> (<n>)" where n is 1+ digits and the prefix is anything.
+  const m = name.match(/^(.*?)\s*\((\d+)\)$/)
+  if (!m) {
+    return (
+      <span className="font-mono text-[10px] text-zinc-700 dark:text-zinc-300">{name}</span>
+    )
+  }
+  const prefix = m[1]!
+  const num = m[2]!
+  return (
+    <span className="font-mono text-[10px]">
+      <button
+        type="button"
+        onClick={() => onJumpToConnection(prefix)}
+        className="rounded px-1 text-cyan-700 hover:bg-cyan-500/10 hover:underline dark:text-cyan-300"
+        title="Jump to parent connection"
+      >
+        {prefix}
+      </button>
+      <span className="text-zinc-500"> ({num})</span>
+    </span>
   )
 }
 

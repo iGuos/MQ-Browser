@@ -283,7 +283,8 @@
       "close": "强制关闭"
     },
     "closeConfirmTitle": "确认关闭连接？",
-    "closeConfirmDetail": "强制关闭连接 “{{name}}”，客户端将收到断连。"
+    "closeConfirmDetail": "强制关闭连接 “{{name}}”，客户端将收到断连。",
+    "viewChannels": "查看该连接的 channel 列表"
   },
   "create": {
     "submit": "创建",
@@ -415,7 +416,9 @@
       "prefetch": "Prefetch",
       "ack": "Ack 模式",
       "status": "状态"
-    }
+    },
+    "openQueue": "打开该队列详情",
+    "openChannel": "跳转到该 channel"
   },
   "csv": {
     "export": "导出 CSV"

@@ -283,7 +283,8 @@
       "close": "Close"
     },
     "closeConfirmTitle": "Close connection?",
-    "closeConfirmDetail": "Force-close connection \"{{name}}\". The client will see a connection drop."
+    "closeConfirmDetail": "Force-close connection \"{{name}}\". The client will see a connection drop.",
+    "viewChannels": "View this connection's channels"
   },
   "create": {
     "submit": "Create",
@@ -415,7 +416,9 @@
       "prefetch": "Prefetch",
       "ack": "Ack mode",
       "status": "Status"
-    }
+    },
+    "openQueue": "Open this queue's detail",
+    "openChannel": "Jump to this channel"
   },
   "csv": {
     "export": "CSV"

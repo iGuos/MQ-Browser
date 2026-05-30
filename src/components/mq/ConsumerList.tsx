@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ConsumerInfo } from '@shared/types'
 import { exportCsv } from '@/lib/csv'
 import { SortableTh } from '@/components/SortableTh'
 import { useSortable } from '@/lib/sort'
+import { useWorkspaceId } from '@/context/WorkspaceContext'
+import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 
 type Slice =
   | {
@@ -14,7 +16,16 @@ type Slice =
 
 export function ConsumerList({ slice }: { slice: Slice }) {
   const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const nav = useWorkspaceUiStore((s) => s.navByWs[workspaceId])
+  const navigateTo = useWorkspaceUiStore((s) => s.navigateTo)
   const [filter, setFilter] = useState('')
+
+  useEffect(() => {
+    if (!nav) return
+    if (nav.diagnosticsSection === 'consumers') setFilter(nav.filter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav?.nonce])
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -113,8 +124,20 @@ export function ConsumerList({ slice }: { slice: Slice }) {
                 key={`${c.vhost}::${c.queue}::${c.consumerTag}::${i}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
               >
-                <td className="px-3 py-2 align-middle font-mono text-zinc-900 dark:text-zinc-100">
-                  {c.queue}
+                <td className="px-3 py-2 align-middle font-mono">
+                  <button
+                    type="button"
+                    title={t('consumers.openQueue')}
+                    onClick={() =>
+                      navigateTo(workspaceId, {
+                        detailTab: 'queues',
+                        openQueueName: c.queue,
+                      })
+                    }
+                    className="rounded px-1 text-zinc-900 hover:bg-cyan-500/10 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
+                  >
+                    {c.queue}
+                  </button>
                 </td>
                 <td className="px-3 py-2 align-middle font-mono">{c.vhost}</td>
                 <td className="px-3 py-2 align-middle font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
@@ -125,8 +148,20 @@ export function ConsumerList({ slice }: { slice: Slice }) {
                     </span>
                   ) : null}
                 </td>
-                <td className="px-3 py-2 align-middle font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
-                  {c.channel}
+                <td className="px-3 py-2 align-middle font-mono text-[10px]">
+                  <button
+                    type="button"
+                    title={t('consumers.openChannel')}
+                    onClick={() =>
+                      navigateTo(workspaceId, {
+                        diagnosticsSection: 'channels',
+                        filter: c.channel,
+                      })
+                    }
+                    className="rounded px-1 text-zinc-600 hover:bg-cyan-500/10 hover:text-cyan-700 hover:underline dark:text-zinc-400 dark:hover:text-cyan-300"
+                  >
+                    {c.channel}
+                  </button>
                 </td>
                 <td className="px-3 py-2 text-right align-middle">{c.prefetchCount}</td>
                 <td className="px-3 py-2 align-middle">
