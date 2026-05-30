@@ -215,7 +215,10 @@
     "routingKey": "routing key",
     "tail": "Live tail",
     "export": "Export…",
-    "exported": "Exported {{count}} message(s)"
+    "exported": "Exported {{count}} message(s)",
+    "headers": "Headers",
+    "properties": "Properties",
+    "noHeaders": "(no headers)"
   },
   "body": {
     "raw": "Raw",

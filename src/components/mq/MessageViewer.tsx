@@ -20,7 +20,7 @@ export function MessageViewer({
   onClose: () => void
 }) {
   const { t } = useTranslation()
-  const [count, setCount] = useState(5)
+  const [count, setCount] = useState(1)
   const [requeue, setRequeue] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -207,6 +207,7 @@ export function MessageViewer({
                     </span>
                   ) : null}
                 </div>
+                <PropertiesView properties={m.properties} />
                 <MessageBodyViewer bodyText={m.bodyText} bodyBase64={m.bodyBase64} />
               </div>
             ))
@@ -215,4 +216,63 @@ export function MessageViewer({
       </div>
     </Modal>
   )
+}
+
+function PropertiesView({ properties }: { properties: Record<string, unknown> }) {
+  const { t } = useTranslation()
+  if (!properties || typeof properties !== 'object') return null
+  const { headers, ...rest } = properties as { headers?: unknown } & Record<string, unknown>
+  const restEntries = Object.entries(rest).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  const headerEntries =
+    headers && typeof headers === 'object' && !Array.isArray(headers)
+      ? Object.entries(headers as Record<string, unknown>)
+      : []
+  const hasHeadersField = headers !== undefined
+  if (restEntries.length === 0 && !hasHeadersField) return null
+
+  return (
+    <div className="mb-2 space-y-1 rounded-md border border-zinc-200/80 bg-zinc-50/60 px-2 py-1.5 text-[11px] dark:border-white/[0.06] dark:bg-zinc-900/40">
+      {restEntries.length > 0 ? (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <span className="font-medium text-zinc-500 dark:text-zinc-400">
+            {t('messages.properties')}:
+          </span>
+          {restEntries.map(([k, v]) => (
+            <span key={k} className="text-zinc-700 dark:text-zinc-300">
+              <span className="text-zinc-500 dark:text-zinc-400">{k}=</span>
+              <code className="text-zinc-800 dark:text-zinc-200">{formatPropValue(v)}</code>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <div>
+        <span className="mr-2 font-medium text-zinc-500 dark:text-zinc-400">
+          {t('messages.headers')}:
+        </span>
+        {headerEntries.length === 0 ? (
+          <span className="text-zinc-400 dark:text-zinc-500">{t('messages.noHeaders')}</span>
+        ) : (
+          <span className="inline-flex flex-wrap gap-x-3 gap-y-0.5 align-top">
+            {headerEntries.map(([k, v]) => (
+              <span key={k} className="text-zinc-700 dark:text-zinc-300">
+                <span className="text-zinc-500 dark:text-zinc-400">{k}=</span>
+                <code className="text-zinc-800 dark:text-zinc-200">{formatPropValue(v)}</code>
+              </span>
+            ))}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function formatPropValue(v: unknown): string {
+  if (v === null || v === undefined) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  try {
+    return JSON.stringify(v)
+  } catch {
+    return String(v)
+  }
 }

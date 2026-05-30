@@ -215,7 +215,10 @@
     "routingKey": "路由键",
     "tail": "实时跟踪",
     "export": "导出…",
-    "exported": "已导出 {{count}} 条消息"
+    "exported": "已导出 {{count}} 条消息",
+    "headers": "Headers",
+    "properties": "Properties",
+    "noHeaders": "（无 headers）"
   },
   "body": {
     "raw": "原始",
