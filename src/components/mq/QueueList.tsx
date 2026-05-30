@@ -1,18 +1,28 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QueueInfo, RabbitConnection } from '@shared/types'
+import type {
+  BindingInfo,
+  ConsumerInfo,
+  QueueInfo,
+  RabbitConnection,
+} from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
+import { EmptyState } from '@/components/EmptyState'
+import { InfoIcon } from '@/components/InfoIcon'
 import { MessageViewer } from './MessageViewer'
 import { CreateQueueDialog } from './CreateQueueDialog'
+import { QueueDetailDrawer } from './QueueDetailDrawer'
 
 type Slice =
   | {
       queues: QueueInfo[]
+      bindings?: BindingInfo[]
+      consumers?: ConsumerInfo[]
       status: 'idle' | 'loading' | 'ok' | 'error'
     }
   | null
@@ -35,6 +45,7 @@ export function QueueList({
   const [confirmPurge, setConfirmPurge] = useState<QueueInfo | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<QueueInfo | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [detailTarget, setDetailTarget] = useState<QueueInfo | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState<null | 'purge' | 'delete'>(null)
 
@@ -59,6 +70,28 @@ export function QueueList({
 
   if (slice?.status === 'loading' && filtered.length === 0) {
     return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
+  }
+
+  // No queues at all (vs. filter hiding everything) → show a friendly CTA.
+  const totalQueues = slice?.queues.length ?? 0
+  if (totalQueues === 0 && slice?.status === 'ok') {
+    return (
+      <>
+        <EmptyState
+          icon="📭"
+          title={t('queues.empty.title')}
+          hint={t('queues.empty.hint')}
+          cta={{ label: t('create.queue.button'), onClick: () => setShowCreate(true) }}
+        />
+        <CreateQueueDialog
+          open={showCreate}
+          connection={connection}
+          vhost={activeVhost ?? connection.vhost}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+        />
+      </>
+    )
   }
 
   return (
@@ -127,9 +160,15 @@ export function QueueList({
               </th>
               <Th>{t('queues.col.name')}</Th>
               <Th>{t('queues.col.vhost')}</Th>
-              <Th align="right">{t('queues.col.ready')}</Th>
-              <Th align="right">{t('queues.col.unacked')}</Th>
-              <Th align="right">{t('queues.col.total')}</Th>
+              <Th align="right" hint={t('queues.hint.ready')}>
+                {t('queues.col.ready')}
+              </Th>
+              <Th align="right" hint={t('queues.hint.unacked')}>
+                {t('queues.col.unacked')}
+              </Th>
+              <Th align="right" hint={t('queues.hint.total')}>
+                {t('queues.col.total')}
+              </Th>
               <Th align="right">{t('queues.col.consumers')}</Th>
               <Th>{t('queues.col.state')}</Th>
               <Th align="right">{t('queues.col.actions')}</Th>
@@ -150,7 +189,13 @@ export function QueueList({
                   />
                 </td>
                 <Td>
-                  <span className="font-mono text-zinc-900 dark:text-zinc-100">{q.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTarget(q)}
+                    className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
+                  >
+                    {q.name}
+                  </button>
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {q.durable ? <Badge>durable</Badge> : null}
                     {q.autoDelete ? <Badge>auto-delete</Badge> : null}
@@ -263,6 +308,18 @@ export function QueueList({
         onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
       />
 
+      <QueueDetailDrawer
+        open={detailTarget !== null}
+        queue={detailTarget}
+        allBindings={slice?.bindings ?? []}
+        allConsumers={slice?.consumers ?? []}
+        onClose={() => setDetailTarget(null)}
+        onPeek={(q) => {
+          setDetailTarget(null)
+          setPeekTarget(q)
+        }}
+      />
+
       <Modal
         open={bulkConfirm !== null}
         title={
@@ -302,10 +359,25 @@ export function QueueList({
   )
 }
 
-function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
+function Th({
+  children,
+  align,
+  hint,
+}: {
+  children: React.ReactNode
+  align?: 'right'
+  hint?: string
+}) {
   return (
-    <th className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
+    <th
+      className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${
+        align === 'right' ? 'text-right' : ''
+      }`}
+    >
+      <span className={`inline-flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+        {children}
+        {hint ? <InfoIcon hint={hint} /> : null}
+      </span>
     </th>
   )
 }

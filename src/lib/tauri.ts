@@ -3,6 +3,7 @@ import type {
   BindingInfo,
   BindingSpec,
   ChannelInfo,
+  ConsumerInfo,
   ExchangeInfo,
   ExchangeSpec,
   NodeInfo,
@@ -73,6 +74,8 @@ export const api = {
     }),
   listChannels: (connection: RabbitConnection, vhost?: string | null) =>
     invoke<ChannelInfo[]>('list_channels', { connection, vhost: vhost ?? null }),
+  listConsumers: (connection: RabbitConnection, vhost?: string | null) =>
+    invoke<ConsumerInfo[]>('list_consumers', { connection, vhost: vhost ?? null }),
   closeRuntimeConnection: (connection: RabbitConnection, name: string, reason?: string) =>
     invoke<void>('close_runtime_connection', { connection, name, reason: reason ?? null }),
 

@@ -64,6 +64,16 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
+  /* Compact density: tighter padding on table rows app-wide. */
+  body.density-compact td,
+  body.density-compact th {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  body.density-compact .mq-json-preview {
+    font-size: 10px;
+  }
+
   button {
     @apply font-sans;
   }

@@ -72,6 +72,17 @@ export interface RuntimeConnection {
   clientProperties: Record<string, unknown>
 }
 
+export interface ConsumerInfo {
+  queue: string
+  vhost: string
+  consumerTag: string
+  channel: string
+  prefetchCount: number
+  exclusive: boolean
+  ackRequired: boolean
+  activityStatus: string
+}
+
 export interface ChannelInfo {
   name: string
   user: string
@@ -225,7 +236,9 @@ export type DetailTab =
   | 'bindings'
   | 'connections'
   | 'channels'
+  | 'consumers'
   | 'nodes'
   | 'policies'
   | 'admin'
+  | 'routingTester'
   | 'publish'

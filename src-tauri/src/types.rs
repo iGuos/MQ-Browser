@@ -221,6 +221,22 @@ pub struct PermissionInfo {
     pub read: String,
 }
 
+/// Flat consumer record built from RabbitMQ's nested `/api/consumers` response.
+/// The raw shape has `queue: {name, vhost}` and `channel_details: {name, ...}` —
+/// we flatten that for the frontend.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConsumerInfo {
+    pub queue: String,
+    pub vhost: String,
+    pub consumer_tag: String,
+    pub channel: String,
+    pub prefetch_count: u32,
+    pub exclusive: bool,
+    pub ack_required: bool,
+    pub activity_status: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PolicyInfo {

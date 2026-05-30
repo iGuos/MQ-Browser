@@ -4,6 +4,7 @@ import type { RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { Combobox } from '@/components/Select'
 import { api } from '@/lib/tauri'
+import { validateAmqpName } from '@/lib/validation'
 
 interface Props {
   open: boolean
@@ -31,6 +32,7 @@ export function CreateQueueDialog({ open, connection, vhost, onClose, onCreated 
   const [argRows, setArgRows] = useState<Array<{ key: string; value: string }>>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const nameError = name ? validateAmqpName(name) : null
 
   useEffect(() => {
     if (!open) return
@@ -74,19 +76,24 @@ export function CreateQueueDialog({ open, connection, vhost, onClose, onCreated 
       size="md"
       cancelText={t('dialog.cancel')}
       okText={saving ? t('dialog.saving') : t('create.submit')}
-      okDisabled={!name.trim() || saving}
+      okDisabled={!name.trim() || saving || nameError !== null}
       onCancel={onClose}
       onOk={submit}
     >
       <div className="space-y-3">
         <Field label={t('create.queue.name')}>
           <input
-            className={inputCls}
+            className={`${inputCls} ${nameError ? 'border-red-400' : ''}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="my.queue"
             autoFocus
           />
+          {nameError ? (
+            <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">
+              {t(`validation.name.${nameError}`)}
+            </p>
+          ) : null}
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="vhost">

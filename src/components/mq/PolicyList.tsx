@@ -8,6 +8,7 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
+import { validateRegex } from '@/lib/validation'
 import { ArgumentRows } from './CreateQueueDialog'
 
 type Slice =
@@ -194,6 +195,7 @@ function CreatePolicyDialog({
   const [defRows, setDefRows] = useState<Array<{ key: string; value: string }>>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const patternError = pattern ? validateRegex(pattern) : null
 
   const submit = async () => {
     setSaving(true)
@@ -234,7 +236,7 @@ function CreatePolicyDialog({
       size="md"
       cancelText={t('dialog.cancel')}
       okText={saving ? t('dialog.saving') : t('create.submit')}
-      okDisabled={!name.trim() || !pattern.trim() || saving}
+      okDisabled={!name.trim() || !pattern.trim() || saving || patternError !== null}
       onCancel={onClose}
       onOk={submit}
     >
@@ -251,11 +253,14 @@ function CreatePolicyDialog({
           </Field>
           <Field label={t('policies.createPattern')}>
             <input
-              className={inputCls}
+              className={`${inputCls} font-mono ${patternError ? 'border-red-400' : ''}`}
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
               placeholder="^logs\\."
             />
+            {patternError ? (
+              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">{patternError}</p>
+            ) : null}
           </Field>
           <Field label={t('policies.createApplyTo')}>
             <Select value={applyTo} onChange={setApplyTo} options={APPLY_TO_OPTIONS} size="md" />

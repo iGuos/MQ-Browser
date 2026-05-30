@@ -1,0 +1,146 @@
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { ConsumerInfo } from '@shared/types'
+import { exportCsv } from '@/lib/csv'
+
+type Slice =
+  | {
+      consumers: ConsumerInfo[]
+      status: 'idle' | 'loading' | 'ok' | 'error'
+    }
+  | null
+
+export function ConsumerList({ slice }: { slice: Slice }) {
+  const { t } = useTranslation()
+  const [filter, setFilter] = useState('')
+
+  const filtered = useMemo(() => {
+    const q = filter.trim().toLowerCase()
+    const list = slice?.consumers ?? []
+    if (!q) return list
+    return list.filter(
+      (c) =>
+        c.queue.toLowerCase().includes(q) ||
+        c.consumerTag.toLowerCase().includes(q) ||
+        c.vhost.toLowerCase().includes(q) ||
+        c.channel.toLowerCase().includes(q),
+    )
+  }, [slice, filter])
+
+  if (slice?.status === 'loading' && filtered.length === 0) {
+    return <div className="text-xs text-zinc-500">{t('panel.loading')}</div>
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <input
+          className="flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-white/10 dark:bg-zinc-900"
+          placeholder={t('consumers.filterPlaceholder')}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        <span className="text-[11px] text-zinc-500">
+          {t('consumers.count', { count: filtered.length })}
+        </span>
+        <button
+          type="button"
+          disabled={filtered.length === 0}
+          onClick={() =>
+            exportCsv(
+              filtered as unknown as Array<Record<string, unknown>>,
+              [
+                { key: 'queue', label: 'queue' },
+                { key: 'vhost', label: 'vhost' },
+                { key: 'consumerTag', label: 'consumer_tag' },
+                { key: 'channel', label: 'channel' },
+                { key: 'prefetchCount', label: 'prefetch_count' },
+                { key: 'exclusive', label: 'exclusive' },
+                { key: 'ackRequired', label: 'ack_required' },
+                { key: 'activityStatus', label: 'activity_status' },
+              ],
+              'consumers.csv',
+            )
+          }
+          className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] text-zinc-600 hover:border-cyan-400/50 hover:text-cyan-700 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300"
+        >
+          {t('csv.export')}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+        <table className="min-w-full text-xs">
+          <thead className="bg-zinc-100 text-left text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
+            <tr>
+              <Th>{t('consumers.col.queue')}</Th>
+              <Th>{t('consumers.col.vhost')}</Th>
+              <Th>{t('consumers.col.tag')}</Th>
+              <Th>{t('consumers.col.channel')}</Th>
+              <Th align="right">{t('consumers.col.prefetch')}</Th>
+              <Th>{t('consumers.col.ack')}</Th>
+              <Th>{t('consumers.col.status')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c, i) => (
+              <tr
+                key={`${c.vhost}::${c.queue}::${c.consumerTag}::${i}`}
+                className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
+              >
+                <td className="px-3 py-2 align-middle font-mono text-zinc-900 dark:text-zinc-100">
+                  {c.queue}
+                </td>
+                <td className="px-3 py-2 align-middle font-mono">{c.vhost}</td>
+                <td className="px-3 py-2 align-middle font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
+                  {c.consumerTag}
+                  {c.exclusive ? (
+                    <span className="ml-1 rounded bg-amber-500/15 px-1 text-[9px] uppercase text-amber-700 dark:text-amber-300">
+                      exclusive
+                    </span>
+                  ) : null}
+                </td>
+                <td className="px-3 py-2 align-middle font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
+                  {c.channel}
+                </td>
+                <td className="px-3 py-2 text-right align-middle">{c.prefetchCount}</td>
+                <td className="px-3 py-2 align-middle">
+                  {c.ackRequired ? 'manual' : 'auto'}
+                </td>
+                <td className="px-3 py-2 align-middle">
+                  <span
+                    className={
+                      c.activityStatus === 'up'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }
+                  >
+                    {c.activityStatus || '-'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-3 py-6 text-center text-zinc-500">
+                  {t('consumers.none')}
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function Th({ children, align }: { children: React.ReactNode; align?: 'right' }) {
+  return (
+    <th
+      className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${
+        align === 'right' ? 'text-right' : ''
+      }`}
+    >
+      {children}
+    </th>
+  )
+}

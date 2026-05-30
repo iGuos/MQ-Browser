@@ -13,6 +13,7 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
+import { validateRegex, validateUsername, validateAmqpName } from '@/lib/validation'
 
 type Slice =
   | {
@@ -497,6 +498,12 @@ function PermissionDialog({
   const [read, setRead] = useState('.*')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const anyRegexInvalid =
+    validateRegex(configure) !== null ||
+    validateRegex(write) !== null ||
+    validateRegex(read) !== null
+  const userError = user ? validateUsername(user) : null
+  const vhostError = vhost ? validateAmqpName(vhost) : null
 
   useMemo(() => {
     if (!open) return
@@ -528,7 +535,14 @@ function PermissionDialog({
       title={editing ? t('admin.permissions.editTitle') : t('admin.permissions.addTitle')}
       cancelText={t('dialog.cancel')}
       okText={saving ? t('dialog.saving') : t('create.submit')}
-      okDisabled={!user.trim() || !vhost.trim() || saving}
+      okDisabled={
+        !user.trim() ||
+        !vhost.trim() ||
+        saving ||
+        anyRegexInvalid ||
+        userError !== null ||
+        vhostError !== null
+      }
       onCancel={onClose}
       onOk={submit}
     >
@@ -542,6 +556,11 @@ function PermissionDialog({
               placeholder="user"
               inputClassName={inputCls}
             />
+            {userError ? (
+              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">
+                {t(`validation.name.${userError}`)}
+              </p>
+            ) : null}
           </Field>
           <Field label="vhost">
             <Combobox
@@ -551,6 +570,11 @@ function PermissionDialog({
               placeholder="/"
               inputClassName={inputCls}
             />
+            {vhostError ? (
+              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">
+                {t(`validation.name.${vhostError}`)}
+              </p>
+            ) : null}
           </Field>
         </div>
         <p className="text-[11px] text-zinc-500">{t('admin.permissions.regexHint')}</p>
@@ -574,28 +598,32 @@ function PermissionDialog({
 }
 
 function RegexInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const err = validateRegex(value)
   return (
-    <div className="flex items-center gap-2">
-      <input
-        className={`${inputCls} flex-1 font-mono`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder=".*"
-      />
-      <button
-        type="button"
-        onClick={() => onChange('.*')}
-        className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] text-zinc-600 dark:border-white/10 dark:text-zinc-300"
-      >
-        all
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('')}
-        className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] text-zinc-600 dark:border-white/10 dark:text-zinc-300"
-      >
-        none
-      </button>
+    <div>
+      <div className="flex items-center gap-2">
+        <input
+          className={`${inputCls} flex-1 font-mono ${err ? 'border-red-400' : ''}`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder=".*"
+        />
+        <button
+          type="button"
+          onClick={() => onChange('.*')}
+          className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] text-zinc-600 dark:border-white/10 dark:text-zinc-300"
+        >
+          all
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] text-zinc-600 dark:border-white/10 dark:text-zinc-300"
+        >
+          none
+        </button>
+      </div>
+      {err ? <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">{err}</p> : null}
     </div>
   )
 }

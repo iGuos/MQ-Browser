@@ -36,7 +36,21 @@
     "import": "导入",
     "exported": "连接已导出",
     "exportWarn": "导出文件包含明文密码，请妥善保管。",
-    "imported": "已导入 {{count}} 个连接"
+    "imported": "已导入 {{count}} 个连接",
+    "collapse": "收起侧栏",
+    "expand": "展开侧栏",
+    "density": {
+      "comfortable": "切换到舒适密度",
+      "compact": "切换到紧凑密度"
+    }
+  },
+  "about": {
+    "title": "关于",
+    "close": "关闭",
+    "version": "应用版本",
+    "tauri": "Tauri 版本",
+    "description": "MQ Browser —— Tauri + React 桌面客户端，通过管理 HTTP API 浏览 RabbitMQ 拓扑、消息、策略、用户与路由分析。",
+    "license": "MIT 协议。"
   },
   "dialog": {
     "addTitle": "新增 RabbitMQ 连接",
@@ -45,6 +59,8 @@
     "labelHost": "主机",
     "labelAmqpPort": "AMQP 端口 (可选)",
     "amqpPortPlaceholder": "5672 (本程序未使用)",
+    "amqpPortHint": "仅用作记录 —— 本程序通过管理 HTTP API 与 Broker 通讯，不走 AMQP。",
+    "mgmtPortHint": "RabbitMQ 管理插件的端口，15672（明文）/ 15671（TLS）。必填。",
     "labelMgmtPort": "Mgmt 端口",
     "labelUsername": "用户名",
     "labelPassword": "密码",
@@ -66,6 +82,7 @@
     "refresh": "刷新",
     "refreshing": "刷新中…",
     "autoRefresh": "自动",
+    "stale": "数据过时",
     "errorShort": "请求失败",
     "loading": "加载中…",
     "tab": {
@@ -78,7 +95,9 @@
       "channels": "Channel",
       "nodes": "节点",
       "policies": "策略",
-      "admin": "管理"
+      "admin": "管理",
+      "consumers": "消费者",
+      "routingTester": "路由测试"
     },
     "empty": {
       "title": "请选择一个连接",
@@ -121,6 +140,15 @@
     "deleteConfirmTitle": "删除队列",
     "deleteConfirmDetail": "将从 Broker 删除队列 \"{{name}}\"，操作不可撤销。",
     "cancel": "取消",
+    "empty": {
+      "title": "当前 vhost 暂无队列",
+      "hint": "队列负责缓存消息，直到消费者完成确认。新建一个队列开始接收消息。"
+    },
+    "hint": {
+      "ready": "已就绪、等待投递给消费者的消息数。",
+      "unacked": "已投递给消费者但还未确认的消息数。",
+      "total": "ready + unacked，Broker 端持有的全部积压。"
+    },
     "batch": {
       "selected": "已选 {{count}} 项",
       "purge": "批量清空",
@@ -143,6 +171,10 @@
       "flags": "属性"
     },
     "none": "暂无 Exchange",
+    "empty": {
+      "title": "当前 vhost 暂无 Exchange",
+      "hint": "Exchange 按路由规则（direct / fanout / topic / headers）把消息分发到队列。"
+    },
     "deleteConfirmTitle": "确认删除 Exchange？",
     "deleteConfirmDetail": "删除 Exchange “{{name}}”，关联的绑定也会被一并移除。"
   },
@@ -157,6 +189,10 @@
       "vhost": "vhost"
     },
     "none": "暂无绑定",
+    "empty": {
+      "title": "暂无任何绑定",
+      "hint": "绑定通过 routing key 把 Exchange 连接到队列（或其它 Exchange）。"
+    },
     "action": {
       "edit": "编辑"
     },
@@ -346,6 +382,67 @@
       "deleteConfirmDetail": "删除 vhost “{{name}}”，其下的所有队列 / Exchange / 绑定都将被一并删除。",
       "deleted": "已删除 vhost “{{name}}”"
     }
+  },
+  "validation": {
+    "name": {
+      "required": "必填",
+      "noLeadingTrailingSpace": "首尾不能有空白字符",
+      "noControlChars": "不能包含控制字符",
+      "tooLong": "过长（> 255 字符）"
+    },
+    "host": {
+      "required": "请填写主机",
+      "noScheme": "Host 不要带 http(s)://，协议由 TLS 开关决定",
+      "noWhitespace": "主机不能包含空格"
+    },
+    "password": {
+      "empty": "",
+      "weak": "弱",
+      "fair": "中",
+      "strong": "强"
+    }
+  },
+  "consumers": {
+    "filterPlaceholder": "按队列 / consumer tag / channel 过滤",
+    "count": "{{count}} 个消费者",
+    "none": "暂无活跃消费者",
+    "col": {
+      "queue": "队列",
+      "vhost": "vhost",
+      "tag": "Consumer Tag",
+      "channel": "Channel",
+      "prefetch": "Prefetch",
+      "ack": "Ack 模式",
+      "status": "状态"
+    }
+  },
+  "csv": {
+    "export": "导出 CSV"
+  },
+  "routing": {
+    "intro": "模拟一次发布：填入源 Exchange 和 routing key，根据 direct / fanout / topic 规则计算所有最终落点队列（含中间 exchange 链路）。headers 和 x-* 自定义类型暂以「可能匹配」表示（无法获知具体消息 header）。",
+    "source": "源 Exchange",
+    "routingKey": "Routing key",
+    "matched": "匹配到 {{count}} 个目标",
+    "noMatch": "该 routing key 不会落到任何队列。",
+    "fillIn": "请先选择源 Exchange。"
+  },
+  "queueDetail": {
+    "metrics": "指标",
+    "flags": "属性",
+    "arguments": "参数",
+    "inboundBindings": "入站绑定 · {{count}}",
+    "noBindings": "暂无入站绑定。",
+    "consumers": "消费者 · {{count}}",
+    "noConsumers": "暂无消费者。",
+    "peekMessages": "查看消息"
+  },
+  "exchangeDetail": {
+    "flags": "属性",
+    "toQueues": "到队列的绑定 · {{count}}",
+    "toExchanges": "到 Exchange 的绑定 · {{count}}",
+    "noToQueues": "无到队列的绑定。",
+    "noToExchanges": "无到 Exchange 的绑定。"
   },
   "channels": {
     "filterPlaceholder": "按名称 / 用户 / vhost 过滤",

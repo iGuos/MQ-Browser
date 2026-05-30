@@ -36,7 +36,21 @@
     "import": "Import",
     "exported": "Connections exported",
     "exportWarn": "Passwords are stored in plaintext in this file — handle with care.",
-    "imported": "Imported {{count}} connection(s)"
+    "imported": "Imported {{count}} connection(s)",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "density": {
+      "comfortable": "Comfortable density",
+      "compact": "Compact density"
+    }
+  },
+  "about": {
+    "title": "About",
+    "close": "Close",
+    "version": "App version",
+    "tauri": "Tauri",
+    "description": "MQ Browser — a Tauri + React desktop client for RabbitMQ. Topology, messages, policies, admin and routing analysis through the management HTTP API.",
+    "license": "MIT licensed."
   },
   "dialog": {
     "addTitle": "Add RabbitMQ connection",
@@ -45,6 +59,8 @@
     "labelHost": "Host",
     "labelAmqpPort": "AMQP port (optional)",
     "amqpPortPlaceholder": "5672 (not used by app)",
+    "amqpPortHint": "Metadata only — this app communicates with the broker via the management HTTP API, not AMQP.",
+    "mgmtPortHint": "RabbitMQ management plugin port. 15672 plaintext / 15671 TLS. Required.",
     "labelMgmtPort": "Mgmt port",
     "labelUsername": "Username",
     "labelPassword": "Password",
@@ -66,6 +82,7 @@
     "refresh": "Refresh",
     "refreshing": "Refreshing…",
     "autoRefresh": "Auto",
+    "stale": "stale",
     "errorShort": "Failed",
     "loading": "Loading…",
     "tab": {
@@ -78,7 +95,9 @@
       "channels": "Channels",
       "nodes": "Nodes",
       "policies": "Policies",
-      "admin": "Admin"
+      "admin": "Admin",
+      "consumers": "Consumers",
+      "routingTester": "Routing tester"
     },
     "empty": {
       "title": "Pick a connection",
@@ -121,6 +140,15 @@
     "deleteConfirmTitle": "Delete queue",
     "deleteConfirmDetail": "Delete queue \"{{name}}\" from the broker. This cannot be undone.",
     "cancel": "Cancel",
+    "empty": {
+      "title": "No queues in this vhost yet",
+      "hint": "Queues hold messages until consumers acknowledge them. Create one to start receiving traffic from producers."
+    },
+    "hint": {
+      "ready": "Messages waiting to be delivered to a consumer.",
+      "unacked": "Delivered to a consumer but not yet acknowledged.",
+      "total": "ready + unacked. The full backlog held by the broker."
+    },
     "batch": {
       "selected": "{{count}} selected",
       "purge": "Purge selected",
@@ -143,6 +171,10 @@
       "flags": "Flags"
     },
     "none": "No exchanges",
+    "empty": {
+      "title": "No exchanges in this vhost",
+      "hint": "Exchanges route messages to queues based on routing rules (direct, fanout, topic, headers)."
+    },
     "deleteConfirmTitle": "Delete exchange?",
     "deleteConfirmDetail": "Delete exchange \"{{name}}\". Bindings on it will also be removed."
   },
@@ -157,6 +189,10 @@
       "vhost": "vhost"
     },
     "none": "No bindings",
+    "empty": {
+      "title": "No bindings configured",
+      "hint": "Bindings connect exchanges to queues (or other exchanges) using a routing key."
+    },
     "action": {
       "edit": "Edit"
     },
@@ -346,6 +382,67 @@
       "deleteConfirmDetail": "Delete vhost \"{{name}}\". All queues/exchanges/bindings under it are removed.",
       "deleted": "Deleted vhost \"{{name}}\""
     }
+  },
+  "validation": {
+    "name": {
+      "required": "Required",
+      "noLeadingTrailingSpace": "No leading or trailing whitespace",
+      "noControlChars": "Must not contain control characters",
+      "tooLong": "Too long (>255 chars)"
+    },
+    "host": {
+      "required": "Host is required",
+      "noScheme": "Host should not include http(s):// — put the scheme elsewhere",
+      "noWhitespace": "Host must not contain whitespace"
+    },
+    "password": {
+      "empty": "",
+      "weak": "weak",
+      "fair": "fair",
+      "strong": "strong"
+    }
+  },
+  "consumers": {
+    "filterPlaceholder": "Filter by queue / tag / channel",
+    "count": "{{count}} consumer(s)",
+    "none": "No active consumers",
+    "col": {
+      "queue": "Queue",
+      "vhost": "vhost",
+      "tag": "Consumer tag",
+      "channel": "Channel",
+      "prefetch": "Prefetch",
+      "ack": "Ack mode",
+      "status": "Status"
+    }
+  },
+  "csv": {
+    "export": "CSV"
+  },
+  "routing": {
+    "intro": "Simulate a publish: pick a source exchange and routing key — we trace bindings using direct/fanout/topic rules and show every queue (and intermediate exchange) the message would land in. Headers exchanges and x-* custom types are marked as 'potentially matches' (we can't infer message headers).",
+    "source": "Source exchange",
+    "routingKey": "Routing key",
+    "matched": "Matched targets: {{count}}",
+    "noMatch": "No queues or exchanges would receive a message with this key.",
+    "fillIn": "Pick a source exchange to start."
+  },
+  "queueDetail": {
+    "metrics": "Metrics",
+    "flags": "Flags",
+    "arguments": "Arguments",
+    "inboundBindings": "Inbound bindings · {{count}}",
+    "noBindings": "No inbound bindings.",
+    "consumers": "Consumers · {{count}}",
+    "noConsumers": "No consumers.",
+    "peekMessages": "Peek messages"
+  },
+  "exchangeDetail": {
+    "flags": "Flags",
+    "toQueues": "Bindings to queues · {{count}}",
+    "toExchanges": "Bindings to exchanges · {{count}}",
+    "noToQueues": "No queue bindings.",
+    "noToExchanges": "No exchange bindings."
   },
   "channels": {
     "filterPlaceholder": "Filter by name, user, vhost",

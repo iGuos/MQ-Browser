@@ -10,9 +10,11 @@ import { ExchangeList } from './ExchangeList'
 import { BindingList } from './BindingList'
 import { ConnectionList } from './ConnectionList'
 import { ChannelList } from './ChannelList'
+import { ConsumerList } from './ConsumerList'
 import { NodeList } from './NodeList'
 import { PolicyList } from './PolicyList'
 import { AdminPanel } from './AdminPanel'
+import { RoutingTester } from './RoutingTester'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
@@ -26,8 +28,10 @@ const BASE_TAB_ORDER: DetailTab[] = [
   'bindings',
   'connections',
   'channels',
+  'consumers',
   'nodes',
   'policies',
+  'routingTester',
   'publish',
 ]
 
@@ -161,8 +165,15 @@ export function TopologyPanel() {
             </button>
           )
         })}
-        <div className="ml-auto pr-2">
-          {status === 'error' ? (
+        <div className="ml-auto flex items-center gap-2 pr-2">
+          {status === 'error' && slice?.lastFetchedAt ? (
+            <span
+              className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-700 dark:text-amber-300"
+              title={slice?.error ?? ''}
+            >
+              {t('panel.stale')}
+            </span>
+          ) : status === 'error' ? (
             <span className="text-[11px] text-red-600 dark:text-red-400" title={slice?.error ?? ''}>
               {t('panel.errorShort')}
             </span>
@@ -188,6 +199,10 @@ export function TopologyPanel() {
           <ConnectionList connection={selected} slice={slice ?? null} />
         ) : detailTab === 'channels' ? (
           <ChannelList connection={selected} slice={slice ?? null} />
+        ) : detailTab === 'consumers' ? (
+          <ConsumerList slice={slice ?? null} />
+        ) : detailTab === 'routingTester' ? (
+          <RoutingTester slice={slice ?? null} />
         ) : detailTab === 'nodes' ? (
           <NodeList slice={slice ?? null} />
         ) : detailTab === 'policies' ? (

@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog'
@@ -10,7 +10,9 @@ import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useConnectionsStore } from '@/stores/connectionsStore'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { useTopologyStore } from '@/stores/topologyStore'
+import { useUiPrefsStore } from '@/stores/uiPrefsStore'
 import { toast } from '@/stores/toastStore'
+import { AboutDialog } from '@/components/AboutDialog'
 
 type HealthStatus = 'idle' | 'loading' | 'ok' | 'error'
 
@@ -54,6 +56,45 @@ export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
     )
   const selectedId = useWorkspaceUiStore((s) => s.selectedConnByWs[workspaceId] ?? null)
   const topologyByKey = useTopologyStore((s) => s.byKey)
+  const sidebarWidth = useUiPrefsStore((s) => s.sidebarWidth)
+  const setSidebarWidth = useUiPrefsStore((s) => s.setSidebarWidth)
+  const density = useUiPrefsStore((s) => s.density)
+  const setDensity = useUiPrefsStore((s) => s.setDensity)
+  const [collapsed, setCollapsed] = useState(false)
+  const [showAbout, setShowAbout] = useState(false)
+  const dragStartRef = useRef<{ x: number; w: number } | null>(null)
+
+  // Auto-collapse below 800px window width.
+  useEffect(() => {
+    const handler = () => {
+      if (window.innerWidth < 800) setCollapsed(true)
+    }
+    window.addEventListener('resize', handler)
+    handler()
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  // Apply density class to body.
+  useEffect(() => {
+    document.body.classList.toggle('density-compact', density === 'compact')
+  }, [density])
+
+  const onResizerDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    dragStartRef.current = { x: e.clientX, w: sidebarWidth }
+    const onMove = (ev: MouseEvent) => {
+      const s = dragStartRef.current
+      if (!s) return
+      setSidebarWidth(s.w + (ev.clientX - s.x))
+    }
+    const onUp = () => {
+      dragStartRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
   const select = useCallback(
     (id: string | null) => {
       useWorkspaceUiStore.getState().setSelectedForWorkspace(workspaceId, id)
@@ -105,15 +146,63 @@ export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
 
   const endDropBefore = connections.length
 
+  if (collapsed) {
+    return (
+      <>
+        <aside className="flex h-full w-10 shrink-0 flex-col items-center border-r border-zinc-200/80 bg-white/70 py-2 dark:border-white/[0.06] dark:bg-zinc-950/80">
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            title={t('sidebar.expand')}
+            className="rounded-md p-1 text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            aria-label="Expand sidebar"
+          >
+            »
+          </button>
+        </aside>
+        <AboutDialog open={showAbout} onClose={() => setShowAbout(false)} />
+      </>
+    )
+  }
+
   return (
     <>
-      <aside className="flex h-full w-[18.5rem] shrink-0 flex-col border-r border-zinc-200/80 bg-white/70 shadow-[inset_-1px_0_0_rgba(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.06] dark:bg-zinc-950/80 dark:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]">
+      <aside
+        className="relative flex h-full shrink-0 flex-col border-r border-zinc-200/80 bg-white/70 shadow-[inset_-1px_0_0_rgba(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.06] dark:bg-zinc-950/80 dark:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]"
+        style={{ width: sidebarWidth }}
+      >
         <div className="border-b border-zinc-200/80 px-4 pb-4 pt-2 dark:border-white/[0.06]">
           <div className="mb-1 flex items-center justify-between gap-2">
             <div className="min-w-0 text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400/90">
               MQ BROWSER
             </div>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setDensity(density === 'compact' ? 'comfortable' : 'compact')}
+                title={t(`sidebar.density.${density === 'compact' ? 'comfortable' : 'compact'}`)}
+                className="rounded-md px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                {density === 'compact' ? '⛶' : '☰'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAbout(true)}
+                title={t('about.title')}
+                className="rounded-md px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                ⓘ
+              </button>
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                title={t('sidebar.collapse')}
+                className="rounded-md px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                «
+              </button>
+              <LanguageSwitcher />
+            </div>
           </div>
           <div className="select-none">
             <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
@@ -300,7 +389,15 @@ export function ConnectionSidebar({ onAdd, onEdit }: ConnectionSidebarProps) {
             </ul>
           )}
         </div>
+        {/* Drag handle to resize the sidebar */}
+        <div
+          onMouseDown={onResizerDown}
+          className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-cyan-400/30"
+          aria-hidden
+        />
       </aside>
+
+      <AboutDialog open={showAbout} onClose={() => setShowAbout(false)} />
 
       <Modal
         open={pendingDeleteId !== null}

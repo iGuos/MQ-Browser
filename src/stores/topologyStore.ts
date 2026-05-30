@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   BindingInfo,
   ChannelInfo,
+  ConsumerInfo,
   ExchangeInfo,
   NodeInfo,
   PermissionInfo,
@@ -26,6 +27,7 @@ interface TopologySlice {
   bindings: BindingInfo[]
   runtimeConnections: RuntimeConnection[]
   channels: ChannelInfo[]
+  consumers: ConsumerInfo[]
   nodes: NodeInfo[]
   policies: PolicyInfo[]
   whoami: WhoamiInfo | null
@@ -34,6 +36,8 @@ interface TopologySlice {
   permissions: PermissionInfo[]
   /** Server overview (broker version, cluster name, etc.) */
   overview: Record<string, unknown> | null
+  /** When the slice was last successfully refreshed (epoch ms). */
+  lastFetchedAt: number | null
 }
 
 interface TopologyState {
@@ -57,12 +61,14 @@ function emptySlice(): TopologySlice {
     bindings: [],
     runtimeConnections: [],
     channels: [],
+    consumers: [],
     nodes: [],
     policies: [],
     whoami: null,
     users: [],
     permissions: [],
     overview: null,
+    lastFetchedAt: null,
   }
 }
 
@@ -94,6 +100,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
         bindings,
         runtimeConnections,
         channels,
+        consumers,
         nodes,
         policies,
         whoami,
@@ -105,6 +112,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
         api.listBindings(connection, targetVhost),
         api.listRuntimeConnections(connection, targetVhost).catch(() => []),
         api.listChannels(connection, targetVhost).catch(() => []),
+        api.listConsumers(connection, targetVhost).catch(() => []),
         api.listNodes(connection).catch(() => []),
         api.listPolicies(connection, targetVhost).catch(() => []),
         api.whoami(connection).catch(() => null),
@@ -132,16 +140,20 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
             bindings,
             runtimeConnections,
             channels,
+            consumers,
             nodes,
             policies,
             whoami,
             users,
             permissions,
+            lastFetchedAt: Date.now(),
           },
         },
       }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
+      // Keep the previously-fetched data so the UI can still show useful info
+      // while flagging it as stale. Only the status + error are updated.
       set((s) => ({
         byKey: {
           ...s.byKey,

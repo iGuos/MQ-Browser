@@ -4,6 +4,8 @@ import type { RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { useConnectionsStore } from '@/stores/connectionsStore'
 import { api } from '@/lib/tauri'
+import { validateHost, passwordStrength } from '@/lib/validation'
+import { InfoIcon } from '@/components/InfoIcon'
 
 type Mode = 'add' | 'edit'
 
@@ -77,9 +79,14 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
     setTestResult(null)
   }, [open, source])
 
+  const hostError = useMemo(() => validateHost(form.host.trim()), [form.host])
+  const pwStrength = useMemo(() => passwordStrength(form.password), [form.password])
   const canSave = useMemo(
-    () => form.host.trim().length > 0 && form.username.trim().length > 0,
-    [form.host, form.username],
+    () =>
+      form.host.trim().length > 0 &&
+      form.username.trim().length > 0 &&
+      hostError === null,
+    [form.host, form.username, hostError],
   )
 
   const onTest = async () => {
@@ -139,13 +146,18 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
         </Field>
         <Field label={t('dialog.labelHost')} span={2}>
           <input
-            className={inputCls}
+            className={`${inputCls} ${hostError ? 'border-red-400 focus:border-red-500 focus:ring-red-300' : ''}`}
             placeholder="localhost"
             value={form.host}
             onChange={(e) => setForm((s) => ({ ...s, host: e.target.value }))}
           />
+          {hostError ? (
+            <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">
+              {t(`validation.host.${hostError}`)}
+            </p>
+          ) : null}
         </Field>
-        <Field label={t('dialog.labelMgmtPort')}>
+        <Field label={t('dialog.labelMgmtPort')} hint={t('dialog.mgmtPortHint')}>
           <input
             className={inputCls}
             type="number"
@@ -153,7 +165,7 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
             onChange={(e) => setForm((s) => ({ ...s, mgmtPort: Number(e.target.value) || 0 }))}
           />
         </Field>
-        <Field label={t('dialog.labelAmqpPort')}>
+        <Field label={t('dialog.labelAmqpPort')} hint={t('dialog.amqpPortHint')}>
           <input
             className={inputCls}
             type="number"
@@ -176,6 +188,7 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
             value={form.password}
             onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
           />
+          {form.password ? <PasswordMeter strength={pwStrength} /> : null}
         </Field>
         <Field label={t('dialog.labelVhost')}>
           <input
@@ -222,18 +235,44 @@ export function ConnectionDialog({ open, mode, source, onClose }: ConnectionDial
 const inputCls =
   'mt-1 w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-300 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100'
 
+function PasswordMeter({ strength }: { strength: 'empty' | 'weak' | 'fair' | 'strong' }) {
+  const { t } = useTranslation()
+  const cls =
+    strength === 'strong'
+      ? 'bg-emerald-500'
+      : strength === 'fair'
+        ? 'bg-amber-500'
+        : 'bg-red-500'
+  const w = strength === 'strong' ? '100%' : strength === 'fair' ? '60%' : '25%'
+  return (
+    <div className="mt-1 flex items-center gap-2">
+      <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+        <div className={`h-full ${cls}`} style={{ width: w }} />
+      </div>
+      <span className="text-[9px] uppercase tracking-wide text-zinc-500">
+        {t(`validation.password.${strength}`)}
+      </span>
+    </div>
+  )
+}
+
 function Field({
   label,
+  hint,
   children,
   span = 1,
 }: {
   label: string
+  hint?: string
   children: React.ReactNode
   span?: 1 | 2
 }) {
   return (
     <label className={span === 2 ? 'col-span-2 block' : 'block'}>
-      <span className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className="flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        {label}
+        {hint ? <InfoIcon hint={hint} /> : null}
+      </span>
       {children}
     </label>
   )

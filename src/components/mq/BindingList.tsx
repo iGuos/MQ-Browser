@@ -7,6 +7,7 @@ import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
 import { toast } from '@/stores/toastStore'
+import { EmptyState } from '@/components/EmptyState'
 import { CreateBindingDialog } from './CreateBindingDialog'
 
 type Slice =
@@ -45,6 +46,29 @@ export function BindingList({
         x.routingKey.toLowerCase().includes(q),
     )
   }, [slice, filter])
+
+  const total = slice?.bindings?.length ?? 0
+  if (total === 0 && slice?.status === 'ok') {
+    return (
+      <>
+        <EmptyState
+          icon="🔗"
+          title={t('bindings.empty.title')}
+          hint={t('bindings.empty.hint')}
+          cta={{ label: t('create.binding.button'), onClick: () => setShowCreate(true) }}
+        />
+        <CreateBindingDialog
+          open={showCreate}
+          connection={connection}
+          vhost={activeVhost ?? connection.vhost}
+          exchanges={slice?.exchanges ?? []}
+          queues={slice?.queues ?? []}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+        />
+      </>
+    )
+  }
 
   return (
     <div>

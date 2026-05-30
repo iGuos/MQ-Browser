@@ -1,14 +1,22 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ExchangeInfo, RabbitConnection } from '@shared/types'
+import type { BindingInfo, ExchangeInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { api } from '@/lib/tauri'
 import { useTopologyStore } from '@/stores/topologyStore'
 import { useWorkspaceId } from '@/context/WorkspaceContext'
 import { useWorkspaceUiStore } from '@/stores/workspaceUiStore'
+import { EmptyState } from '@/components/EmptyState'
 import { CreateExchangeDialog } from './CreateExchangeDialog'
+import { ExchangeDetailDrawer } from './ExchangeDetailDrawer'
 
-type Slice = { exchanges: ExchangeInfo[]; status: 'idle' | 'loading' | 'ok' | 'error' } | null
+type Slice =
+  | {
+      exchanges: ExchangeInfo[]
+      bindings?: BindingInfo[]
+      status: 'idle' | 'loading' | 'ok' | 'error'
+    }
+  | null
 
 export function ExchangeList({
   slice,
@@ -24,12 +32,34 @@ export function ExchangeList({
   const [filter, setFilter] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<ExchangeInfo | null>(null)
+  const [detailTarget, setDetailTarget] = useState<ExchangeInfo | null>(null)
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const list = slice?.exchanges ?? []
     if (!q) return list
     return list.filter((x) => x.name.toLowerCase().includes(q) || x.type.toLowerCase().includes(q))
   }, [slice, filter])
+
+  const total = slice?.exchanges?.length ?? 0
+  if (total === 0 && slice?.status === 'ok') {
+    return (
+      <>
+        <EmptyState
+          icon="🚏"
+          title={t('exchanges.empty.title')}
+          hint={t('exchanges.empty.hint')}
+          cta={{ label: t('create.exchange.button'), onClick: () => setShowCreate(true) }}
+        />
+        <CreateExchangeDialog
+          open={showCreate}
+          connection={connection}
+          vhost={activeVhost ?? connection.vhost}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+        />
+      </>
+    )
+  }
 
   return (
     <div>
@@ -78,8 +108,14 @@ export function ExchangeList({
                 key={`${e.vhost}::${e.name}::${e.type}`}
                 className="border-t border-zinc-200/80 odd:bg-white even:bg-zinc-50/60 dark:border-white/[0.04] dark:odd:bg-zinc-900/40 dark:even:bg-zinc-950/40"
               >
-                <td className="px-3 py-2 font-mono text-zinc-900 dark:text-zinc-100">
-                  {e.name || <span className="text-zinc-500">(AMQP default)</span>}
+                <td className="px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setDetailTarget(e)}
+                    className="font-mono text-zinc-900 hover:text-cyan-700 hover:underline dark:text-zinc-100 dark:hover:text-cyan-300"
+                  >
+                    {e.name || <span className="text-zinc-500">(AMQP default)</span>}
+                  </button>
                 </td>
                 <td className="px-3 py-2 font-mono">{e.vhost}</td>
                 <td className="px-3 py-2">
@@ -123,6 +159,13 @@ export function ExchangeList({
         vhost={activeVhost ?? connection.vhost}
         onClose={() => setShowCreate(false)}
         onCreated={() => void fetchTopology(workspaceId, connection, activeVhost)}
+      />
+
+      <ExchangeDetailDrawer
+        open={detailTarget !== null}
+        exchange={detailTarget}
+        allBindings={slice?.bindings ?? []}
+        onClose={() => setDetailTarget(null)}
       />
 
       <Modal

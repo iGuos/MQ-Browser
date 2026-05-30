@@ -8,8 +8,8 @@
 
 use crate::error::{AppError, AppResult};
 use crate::types::{
-    BindingInfo, ChannelInfo, ExchangeInfo, NodeInfo, PermissionInfo, PolicyInfo, QueueInfo,
-    RabbitConnection, RuntimeConnection, UserInfo, VhostInfo, WhoamiInfo,
+    BindingInfo, ChannelInfo, ConsumerInfo, ExchangeInfo, NodeInfo, PermissionInfo, PolicyInfo,
+    QueueInfo, RabbitConnection, RuntimeConnection, UserInfo, VhostInfo, WhoamiInfo,
 };
 use reqwest::Client;
 use serde::Deserialize;
@@ -198,6 +198,61 @@ pub async fn list_runtime_connections(
         None => "/api/connections".to_string(),
     };
     get_json(&connection, &path).await
+}
+
+#[tauri::command]
+pub async fn list_consumers(
+    connection: RabbitConnection,
+    vhost: Option<String>,
+) -> AppResult<Vec<ConsumerInfo>> {
+    let path = match vhost {
+        Some(v) => format!("/api/consumers/{}", enc_vhost(&v)),
+        None => "/api/consumers".to_string(),
+    };
+    let raw: Value = get_json(&connection, &path).await?;
+    let arr = raw.as_array().cloned().unwrap_or_default();
+    let mut out = Vec::with_capacity(arr.len());
+    for item in arr {
+        let queue_obj = item.get("queue").cloned().unwrap_or(Value::Null);
+        let chan_obj = item.get("channel_details").cloned().unwrap_or(Value::Null);
+        out.push(ConsumerInfo {
+            queue: queue_obj
+                .get("name")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+            vhost: queue_obj
+                .get("vhost")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+            consumer_tag: item
+                .get("consumer_tag")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+            channel: chan_obj
+                .get("name")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+            prefetch_count: item
+                .get("prefetch_count")
+                .and_then(|x| x.as_u64())
+                .unwrap_or(0) as u32,
+            exclusive: item.get("exclusive").and_then(|x| x.as_bool()).unwrap_or(false),
+            ack_required: item
+                .get("ack_required")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(false),
+            activity_status: item
+                .get("activity_status")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+        });
+    }
+    Ok(out)
 }
 
 #[tauri::command]

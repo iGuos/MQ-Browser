@@ -39,6 +39,7 @@ pub fn run() {
             management::delete_exchange,
             management::list_runtime_connections,
             management::list_channels,
+            management::list_consumers,
             management::close_runtime_connection,
             management::create_queue,
             management::create_exchange,
