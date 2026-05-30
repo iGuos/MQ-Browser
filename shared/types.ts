@@ -113,6 +113,41 @@ export interface PolicyInfo {
   definition: Record<string, unknown>
 }
 
+export interface WhoamiInfo {
+  name: string
+  tags: string[]
+}
+
+export interface UserInfo {
+  name: string
+  tags: string[]
+  passwordHash: string
+  hashingAlgorithm: string
+}
+
+export interface UserSpec {
+  name: string
+  /** Plain-text password. Empty = leave existing password untouched. */
+  password: string
+  tags: string[]
+}
+
+export interface PermissionInfo {
+  user: string
+  vhost: string
+  configure: string
+  write: string
+  read: string
+}
+
+export interface PermissionSpec {
+  user: string
+  vhost: string
+  configure: string
+  write: string
+  read: string
+}
+
 export interface PolicySpec {
   vhost: string
   name: string
@@ -192,4 +227,5 @@ export type DetailTab =
   | 'channels'
   | 'nodes'
   | 'policies'
+  | 'admin'
   | 'publish'

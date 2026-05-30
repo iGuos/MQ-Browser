@@ -77,7 +77,8 @@
       "connections": "连接",
       "channels": "Channel",
       "nodes": "节点",
-      "policies": "策略"
+      "policies": "策略",
+      "admin": "管理"
     },
     "empty": {
       "title": "请选择一个连接",
@@ -155,7 +156,14 @@
       "routingKey": "路由键",
       "vhost": "vhost"
     },
-    "none": "暂无绑定"
+    "none": "暂无绑定",
+    "action": {
+      "edit": "编辑"
+    },
+    "deleteConfirmTitle": "确认删除绑定？",
+    "deleteConfirmDetail": "删除绑定：{{source}} → {{destination}}（rk={{routingKey}}）",
+    "deleted": "绑定已删除。",
+    "replaced": "绑定已替换（旧绑定删除，新绑定创建）。"
   },
   "messages": {
     "title": "查看队列消息 \"{{name}}\"",
@@ -265,6 +273,9 @@
     "binding": {
       "button": "新建绑定",
       "title": "新建绑定",
+      "editTitle": "编辑绑定",
+      "editNote": "RabbitMQ 协议不支持原地修改绑定。保存会先删除旧绑定再创建新绑定，中间会有极短窗口绑定不存在。",
+      "replace": "替换",
       "source": "源 Exchange",
       "destinationType": "目标类型",
       "destQueue": "队列",
@@ -272,6 +283,68 @@
       "destination": "目标",
       "routingKey": "路由键",
       "arguments": "参数（如 headers 匹配规则）"
+    }
+  },
+  "admin": {
+    "tab": {
+      "users": "用户",
+      "permissions": "权限",
+      "vhosts": "Vhost"
+    },
+    "users": {
+      "filterPlaceholder": "按用户名 / 标签 过滤",
+      "count": "{{count}} 个用户",
+      "none": "暂无用户",
+      "add": "新增用户",
+      "addTitle": "新增用户",
+      "editTitle": "编辑用户",
+      "fieldName": "用户名",
+      "fieldPassword": "密码",
+      "fieldPasswordChange": "新密码",
+      "passwordKeep": "（留空不修改）",
+      "fieldTags": "标签",
+      "col": {
+        "name": "名称",
+        "tags": "标签",
+        "hash": "哈希算法"
+      },
+      "deleteConfirmTitle": "确认删除用户？",
+      "deleteConfirmDetail": "删除用户 “{{name}}”，其所有权限将同时被撤销。",
+      "deleted": "已删除用户 “{{name}}”"
+    },
+    "permissions": {
+      "filterPlaceholder": "按用户或 vhost 过滤",
+      "count": "{{count}} 条",
+      "none": "暂无权限配置。",
+      "add": "授权",
+      "addTitle": "授予权限",
+      "editTitle": "编辑权限",
+      "fieldUser": "用户",
+      "regexHint": "正则：“.*” = 全部，空 = 无，其它 = 名称匹配的对象。",
+      "col": {
+        "user": "用户",
+        "vhost": "vhost",
+        "configure": "Configure",
+        "write": "Write",
+        "read": "Read"
+      },
+      "revoke": "撤销",
+      "revokeConfirmTitle": "确认撤销权限？",
+      "revokeConfirmDetail": "撤销 {{user}} 在 {{vhost}} 上的全部权限。",
+      "revoked": "权限已撤销。"
+    },
+    "vhosts": {
+      "namePlaceholder": "vhost 名称（如 /prod）",
+      "add": "新建",
+      "none": "暂无 vhost。",
+      "col": {
+        "name": "名称",
+        "tracing": "Tracing"
+      },
+      "created": "已创建 vhost “{{name}}”",
+      "deleteConfirmTitle": "确认删除 vhost？",
+      "deleteConfirmDetail": "删除 vhost “{{name}}”，其下的所有队列 / Exchange / 绑定都将被一并删除。",
+      "deleted": "已删除 vhost “{{name}}”"
     }
   },
   "channels": {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ExchangeInfo, QueueInfo, RabbitConnection } from '@shared/types'
+import type { BindingInfo, ExchangeInfo, QueueInfo, RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
 import { Select, Combobox } from '@/components/Select'
 import { api } from '@/lib/tauri'
@@ -12,6 +12,9 @@ interface Props {
   vhost: string
   exchanges: ExchangeInfo[]
   queues: QueueInfo[]
+  /** If set, the dialog opens prefilled and performs delete-then-create
+   *  (RabbitMQ doesn't support in-place binding edits). */
+  editing?: BindingInfo | null
   onClose: () => void
   onCreated?: () => void
 }
@@ -22,6 +25,7 @@ export function CreateBindingDialog({
   vhost,
   exchanges,
   queues,
+  editing,
   onClose,
   onCreated,
 }: Props) {
@@ -36,13 +40,21 @@ export function CreateBindingDialog({
 
   useEffect(() => {
     if (!open) return
-    setDestType('queue')
-    setSource('')
-    setDestination('')
-    setRoutingKey('')
-    setArgRows([])
+    if (editing) {
+      setDestType(editing.destinationType === 'exchange' ? 'exchange' : 'queue')
+      setSource(editing.source)
+      setDestination(editing.destination)
+      setRoutingKey(editing.routingKey)
+      setArgRows([])
+    } else {
+      setDestType('queue')
+      setSource('')
+      setDestination('')
+      setRoutingKey('')
+      setArgRows([])
+    }
     setError(null)
-  }, [open])
+  }, [open, editing])
 
   const submit = async () => {
     setSaving(true)
@@ -53,6 +65,17 @@ export function CreateBindingDialog({
         const k = r.key.trim()
         if (!k) continue
         args[k] = coerceVal(r.value)
+      }
+      // RabbitMQ has no in-place binding edit — drop the old one first if
+      // we're in edit mode, then create the new one.
+      if (editing) {
+        await api.deleteBinding(connection, {
+          vhost: editing.vhost,
+          source: editing.source,
+          destination: editing.destination,
+          destinationType: editing.destinationType,
+          propertiesKey: editing.propertiesKey,
+        })
       }
       await api.createBinding(connection, {
         vhost,
@@ -82,15 +105,26 @@ export function CreateBindingDialog({
   return (
     <Modal
       open={open}
-      title={t('create.binding.title')}
+      title={editing ? t('create.binding.editTitle') : t('create.binding.title')}
       size="md"
       cancelText={t('dialog.cancel')}
-      okText={saving ? t('dialog.saving') : t('create.submit')}
+      okText={
+        saving
+          ? t('dialog.saving')
+          : editing
+            ? t('create.binding.replace')
+            : t('create.submit')
+      }
       okDisabled={!source.trim() || !destination.trim() || saving}
       onCancel={onClose}
       onOk={submit}
     >
       <div className="space-y-3">
+        {editing ? (
+          <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
+            {t('create.binding.editNote')}
+          </div>
+        ) : null}
         <Field label={t('create.binding.source')}>
           <Combobox
             value={source}

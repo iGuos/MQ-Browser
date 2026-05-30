@@ -4,11 +4,14 @@ import type {
   ChannelInfo,
   ExchangeInfo,
   NodeInfo,
+  PermissionInfo,
   PolicyInfo,
   QueueInfo,
   RabbitConnection,
   RuntimeConnection,
+  UserInfo,
   VhostInfo,
+  WhoamiInfo,
 } from '@shared/types'
 import { api } from '@/lib/tauri'
 
@@ -25,6 +28,10 @@ interface TopologySlice {
   channels: ChannelInfo[]
   nodes: NodeInfo[]
   policies: PolicyInfo[]
+  whoami: WhoamiInfo | null
+  /** Only populated when the current user has the administrator tag. */
+  users: UserInfo[]
+  permissions: PermissionInfo[]
   /** Server overview (broker version, cluster name, etc.) */
   overview: Record<string, unknown> | null
 }
@@ -52,6 +59,9 @@ function emptySlice(): TopologySlice {
     channels: [],
     nodes: [],
     policies: [],
+    whoami: null,
+    users: [],
+    permissions: [],
     overview: null,
   }
 }
@@ -86,6 +96,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
         channels,
         nodes,
         policies,
+        whoami,
       ] = await Promise.all([
         api.testConnection(connection).catch(() => null),
         api.listVhosts(connection).catch(() => [] as VhostInfo[]),
@@ -96,7 +107,18 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
         api.listChannels(connection, targetVhost).catch(() => []),
         api.listNodes(connection).catch(() => []),
         api.listPolicies(connection, targetVhost).catch(() => []),
+        api.whoami(connection).catch(() => null),
       ])
+
+      // Admin-only endpoints — skip if user doesn't have administrator tag,
+      // otherwise the broker returns 401/403 and clutters logs.
+      const isAdmin = whoami?.tags?.includes('administrator') ?? false
+      const [users, permissions] = isAdmin
+        ? await Promise.all([
+            api.listUsers(connection).catch(() => []),
+            api.listPermissions(connection).catch(() => []),
+          ])
+        : [[], []]
       set((s) => ({
         byKey: {
           ...s.byKey,
@@ -112,6 +134,9 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
             channels,
             nodes,
             policies,
+            whoami,
+            users,
+            permissions,
           },
         },
       }))

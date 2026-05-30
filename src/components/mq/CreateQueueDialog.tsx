@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RabbitConnection } from '@shared/types'
 import { Modal } from '@/components/Modal'
+import { Combobox } from '@/components/Select'
 import { api } from '@/lib/tauri'
 
 interface Props {
@@ -156,17 +157,36 @@ export function ArgumentRows({
         ) : (
           rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2">
-              <input
-                list={presets ? `argpresets-${label}` : undefined}
-                className={`${inputCls} flex-1`}
-                placeholder="key"
-                value={r.key}
-                onChange={(e) => {
-                  const copy = [...rows]
-                  copy[i] = { ...copy[i]!, key: e.target.value }
-                  onChange(copy)
-                }}
-              />
+              <div className="flex-1">
+                {presets ? (
+                  <Combobox
+                    value={r.key}
+                    onChange={(v) => {
+                      const copy = [...rows]
+                      copy[i] = { ...copy[i]!, key: v }
+                      onChange(copy)
+                    }}
+                    options={presets.map((p) => ({
+                      value: p.key,
+                      label: p.key,
+                      hint: p.hint,
+                    }))}
+                    placeholder="key"
+                    inputClassName={inputCls}
+                  />
+                ) : (
+                  <input
+                    className={inputCls}
+                    placeholder="key"
+                    value={r.key}
+                    onChange={(e) => {
+                      const copy = [...rows]
+                      copy[i] = { ...copy[i]!, key: e.target.value }
+                      onChange(copy)
+                    }}
+                  />
+                )}
+              </div>
               <input
                 className={`${inputCls} flex-1`}
                 placeholder="value"
@@ -187,15 +207,6 @@ export function ArgumentRows({
             </div>
           ))
         )}
-        {presets ? (
-          <datalist id={`argpresets-${label}`}>
-            {presets.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.hint}
-              </option>
-            ))}
-          </datalist>
-        ) : null}
       </div>
     </div>
   )

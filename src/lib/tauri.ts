@@ -7,6 +7,8 @@ import type {
   ExchangeSpec,
   NodeInfo,
   PeekedMessage,
+  PermissionInfo,
+  PermissionSpec,
   PolicyInfo,
   PolicySpec,
   PublishPayload,
@@ -15,7 +17,10 @@ import type {
   QueueSpec,
   RabbitConnection,
   RuntimeConnection,
+  UserInfo,
+  UserSpec,
   VhostInfo,
+  WhoamiInfo,
 } from '@shared/types'
 
 /** Centralised typed wrappers over Tauri `invoke`. */
@@ -78,6 +83,16 @@ export const api = {
     invoke<void>('create_exchange', { connection, spec }),
   createBinding: (connection: RabbitConnection, spec: BindingSpec) =>
     invoke<void>('create_binding', { connection, spec }),
+  deleteBinding: (
+    connection: RabbitConnection,
+    args: {
+      vhost: string
+      source: string
+      destination: string
+      destinationType: string
+      propertiesKey: string
+    },
+  ) => invoke<void>('delete_binding', { connection, ...args }),
   deleteExchange: (connection: RabbitConnection, vhost: string, exchange: string) =>
     invoke<void>('delete_exchange', { connection, vhost, exchange }),
 
@@ -111,4 +126,22 @@ export const api = {
       definitions,
       vhost: vhost ?? null,
     }),
+
+  // Admin -------------------------------------------------------------------
+  whoami: (connection: RabbitConnection) => invoke<WhoamiInfo>('whoami', { connection }),
+  listUsers: (connection: RabbitConnection) => invoke<UserInfo[]>('list_users', { connection }),
+  createOrUpdateUser: (connection: RabbitConnection, spec: UserSpec) =>
+    invoke<void>('create_or_update_user', { connection, spec }),
+  deleteUser: (connection: RabbitConnection, name: string) =>
+    invoke<void>('delete_user', { connection, name }),
+  listPermissions: (connection: RabbitConnection) =>
+    invoke<PermissionInfo[]>('list_permissions', { connection }),
+  setPermissions: (connection: RabbitConnection, spec: PermissionSpec) =>
+    invoke<void>('set_permissions', { connection, spec }),
+  clearPermissions: (connection: RabbitConnection, user: string, vhost: string) =>
+    invoke<void>('clear_permissions', { connection, user, vhost }),
+  createVhost: (connection: RabbitConnection, name: string) =>
+    invoke<void>('create_vhost', { connection, name }),
+  deleteVhost: (connection: RabbitConnection, name: string) =>
+    invoke<void>('delete_vhost', { connection, name }),
 }

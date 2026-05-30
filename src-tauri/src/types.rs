@@ -166,6 +166,63 @@ pub struct NodeInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WhoamiInfo {
+    #[serde(default)]
+    pub name: String,
+    /// Tags come back as either a comma-separated string or an array depending on
+    /// broker version. We surface both as a `Vec<String>` to the frontend.
+    #[serde(default, deserialize_with = "de_tags")]
+    pub tags: Vec<String>,
+}
+
+fn de_tags<'de, D>(d: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize as _;
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Either {
+        S(String),
+        A(Vec<String>),
+        None,
+    }
+    Ok(match Either::deserialize(d)? {
+        Either::S(s) => s
+            .split(',')
+            .map(|x| x.trim().to_string())
+            .filter(|x| !x.is_empty())
+            .collect(),
+        Either::A(a) => a,
+        Either::None => Vec::new(),
+    })
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserInfo {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, deserialize_with = "de_tags")]
+    pub tags: Vec<String>,
+    #[serde(default, alias = "password_hash")]
+    pub password_hash: String,
+    #[serde(default, alias = "hashing_algorithm")]
+    pub hashing_algorithm: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PermissionInfo {
+    pub user: String,
+    pub vhost: String,
+    pub configure: String,
+    pub write: String,
+    pub read: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PolicyInfo {
     #[serde(default)]
     pub vhost: String,

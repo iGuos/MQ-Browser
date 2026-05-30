@@ -12,13 +12,14 @@ import { ConnectionList } from './ConnectionList'
 import { ChannelList } from './ChannelList'
 import { NodeList } from './NodeList'
 import { PolicyList } from './PolicyList'
+import { AdminPanel } from './AdminPanel'
 import { OverviewCard } from './OverviewCard'
 import { PublishDialog } from './PublishDialog'
 import { UsageGuideModal } from '@/components/usage/UsageGuideModal'
 import { Select } from '@/components/Select'
 import { AutoRefreshControl } from './AutoRefreshControl'
 
-const TAB_ORDER: DetailTab[] = [
+const BASE_TAB_ORDER: DetailTab[] = [
   'overview',
   'queues',
   'exchanges',
@@ -83,6 +84,10 @@ export function TopologyPanel() {
 
   const status = slice?.status ?? 'idle'
   const vhosts = slice?.vhosts ?? []
+  const isAdmin = slice?.whoami?.tags?.includes('administrator') ?? false
+  const TAB_ORDER: DetailTab[] = isAdmin
+    ? [...BASE_TAB_ORDER.slice(0, -1), 'admin', 'publish']
+    : BASE_TAB_ORDER
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-zinc-50/40 dark:bg-zinc-950/40">
@@ -187,6 +192,8 @@ export function TopologyPanel() {
           <NodeList slice={slice ?? null} />
         ) : detailTab === 'policies' ? (
           <PolicyList connection={selected} slice={slice ?? null} />
+        ) : detailTab === 'admin' && isAdmin ? (
+          <AdminPanel connection={selected} slice={slice ?? null} />
         ) : (
           <PublishDialog connection={selected} vhost={activeVhost} slice={slice ?? null} />
         )}

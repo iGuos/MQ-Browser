@@ -8,8 +8,8 @@
 
 use crate::error::{AppError, AppResult};
 use crate::types::{
-    BindingInfo, ChannelInfo, ExchangeInfo, NodeInfo, PolicyInfo, QueueInfo, RabbitConnection,
-    RuntimeConnection, VhostInfo,
+    BindingInfo, ChannelInfo, ExchangeInfo, NodeInfo, PermissionInfo, PolicyInfo, QueueInfo,
+    RabbitConnection, RuntimeConnection, UserInfo, VhostInfo, WhoamiInfo,
 };
 use reqwest::Client;
 use serde::Deserialize;
@@ -363,6 +363,47 @@ pub async fn create_binding(connection: RabbitConnection, spec: BindingSpec) -> 
 }
 
 #[tauri::command]
+pub async fn delete_binding(
+    connection: RabbitConnection,
+    vhost: String,
+    source: String,
+    destination: String,
+    destination_type: String,
+    properties_key: String,
+) -> AppResult<()> {
+    let dest_kind = match destination_type.as_str() {
+        "exchange" | "e" => "e",
+        _ => "q",
+    };
+    // properties_key is RabbitMQ's stable handle for the routing-key + args pair.
+    let url = format!(
+        "{}/api/bindings/{}/e/{}/{}/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&vhost),
+        enc_vhost(&source),
+        dest_kind,
+        enc_vhost(&destination),
+        enc_vhost(&properties_key),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        let s = resp.status();
+        let txt = resp.text().await.unwrap_or_default();
+        return Err(AppError::msg(format!(
+            "HTTP {} {}: {}",
+            s.as_u16(),
+            url,
+            preview(&txt),
+        )));
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn delete_exchange(
     connection: RabbitConnection,
     vhost: String,
@@ -533,6 +574,157 @@ pub async fn import_definitions(
             url,
             preview(&txt),
         )));
+    }
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Admin: whoami + users + permissions + vhosts
+// ----------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn whoami(connection: RabbitConnection) -> AppResult<WhoamiInfo> {
+    get_json(&connection, "/api/whoami").await
+}
+
+#[tauri::command]
+pub async fn list_users(connection: RabbitConnection) -> AppResult<Vec<UserInfo>> {
+    get_json(&connection, "/api/users").await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSpec {
+    pub name: String,
+    /// Plain-text password. Leave empty when only updating tags on an existing user.
+    #[serde(default)]
+    pub password: String,
+    /// Comma-separated or array; we forward as a comma-separated string to RabbitMQ.
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn create_or_update_user(
+    connection: RabbitConnection,
+    spec: UserSpec,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/users/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.name),
+    );
+    let tags = spec.tags.join(",");
+    let body = if spec.password.is_empty() {
+        json!({ "tags": tags })
+    } else {
+        json!({ "password": spec.password, "tags": tags })
+    };
+    declare(&connection, &url, body).await
+}
+
+#[tauri::command]
+pub async fn delete_user(connection: RabbitConnection, name: String) -> AppResult<()> {
+    let url = format!(
+        "{}/api/users/{}",
+        connection.mgmt_base(),
+        enc_vhost(&name),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("delete user HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn list_permissions(
+    connection: RabbitConnection,
+) -> AppResult<Vec<PermissionInfo>> {
+    get_json(&connection, "/api/permissions").await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PermissionSpec {
+    pub user: String,
+    pub vhost: String,
+    /// Regex patterns. ".*" means full access, "" means no access.
+    pub configure: String,
+    pub write: String,
+    pub read: String,
+}
+
+#[tauri::command]
+pub async fn set_permissions(
+    connection: RabbitConnection,
+    spec: PermissionSpec,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/permissions/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&spec.vhost),
+        enc_vhost(&spec.user),
+    );
+    let body = json!({
+        "configure": spec.configure,
+        "write": spec.write,
+        "read": spec.read,
+    });
+    declare(&connection, &url, body).await
+}
+
+#[tauri::command]
+pub async fn clear_permissions(
+    connection: RabbitConnection,
+    user: String,
+    vhost: String,
+) -> AppResult<()> {
+    let url = format!(
+        "{}/api/permissions/{}/{}",
+        connection.mgmt_base(),
+        enc_vhost(&vhost),
+        enc_vhost(&user),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("clear perms HTTP {}", resp.status())));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn create_vhost(connection: RabbitConnection, name: String) -> AppResult<()> {
+    let url = format!(
+        "{}/api/vhosts/{}",
+        connection.mgmt_base(),
+        enc_vhost(&name),
+    );
+    declare(&connection, &url, json!({})).await
+}
+
+#[tauri::command]
+pub async fn delete_vhost(connection: RabbitConnection, name: String) -> AppResult<()> {
+    let url = format!(
+        "{}/api/vhosts/{}",
+        connection.mgmt_base(),
+        enc_vhost(&name),
+    );
+    let resp = client()?
+        .delete(&url)
+        .basic_auth(&connection.username, Some(&connection.password))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(AppError::msg(format!("delete vhost HTTP {}", resp.status())));
     }
     Ok(())
 }

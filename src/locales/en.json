@@ -77,7 +77,8 @@
       "connections": "Connections",
       "channels": "Channels",
       "nodes": "Nodes",
-      "policies": "Policies"
+      "policies": "Policies",
+      "admin": "Admin"
     },
     "empty": {
       "title": "Pick a connection",
@@ -155,7 +156,14 @@
       "routingKey": "Routing key",
       "vhost": "vhost"
     },
-    "none": "No bindings"
+    "none": "No bindings",
+    "action": {
+      "edit": "Edit"
+    },
+    "deleteConfirmTitle": "Delete binding?",
+    "deleteConfirmDetail": "Delete binding: {{source}} → {{destination}} (rk={{routingKey}})",
+    "deleted": "Binding deleted.",
+    "replaced": "Binding replaced (old removed, new created)."
   },
   "messages": {
     "title": "Peek messages in \"{{name}}\"",
@@ -265,6 +273,9 @@
     "binding": {
       "button": "New binding",
       "title": "Create binding",
+      "editTitle": "Edit binding",
+      "editNote": "RabbitMQ has no in-place binding edit. Saving will delete the existing binding and create a new one — there is a tiny window where the binding doesn't exist.",
+      "replace": "Replace",
       "source": "Source exchange",
       "destinationType": "Destination type",
       "destQueue": "queue",
@@ -272,6 +283,68 @@
       "destination": "Destination",
       "routingKey": "Routing key",
       "arguments": "Arguments (e.g. headers match)"
+    }
+  },
+  "admin": {
+    "tab": {
+      "users": "Users",
+      "permissions": "Permissions",
+      "vhosts": "Vhosts"
+    },
+    "users": {
+      "filterPlaceholder": "Filter users by name or tag",
+      "count": "{{count}} user(s)",
+      "none": "No users",
+      "add": "Add user",
+      "addTitle": "Add user",
+      "editTitle": "Edit user",
+      "fieldName": "Username",
+      "fieldPassword": "Password",
+      "fieldPasswordChange": "New password",
+      "passwordKeep": "(leave empty to keep current)",
+      "fieldTags": "Tags",
+      "col": {
+        "name": "Name",
+        "tags": "Tags",
+        "hash": "Hash"
+      },
+      "deleteConfirmTitle": "Delete user?",
+      "deleteConfirmDetail": "Delete user \"{{name}}\". All their permissions will also be revoked.",
+      "deleted": "Deleted user \"{{name}}\""
+    },
+    "permissions": {
+      "filterPlaceholder": "Filter by user or vhost",
+      "count": "{{count}} entries",
+      "none": "No permissions defined.",
+      "add": "Grant",
+      "addTitle": "Grant permissions",
+      "editTitle": "Edit permissions",
+      "fieldUser": "User",
+      "regexHint": "Regex: \".*\" = all, empty = none, anything else = matching object names.",
+      "col": {
+        "user": "User",
+        "vhost": "vhost",
+        "configure": "Configure",
+        "write": "Write",
+        "read": "Read"
+      },
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke permissions?",
+      "revokeConfirmDetail": "Revoke {{user}}'s permissions on {{vhost}}.",
+      "revoked": "Permissions revoked."
+    },
+    "vhosts": {
+      "namePlaceholder": "vhost name (e.g. /prod)",
+      "add": "Create",
+      "none": "No vhosts.",
+      "col": {
+        "name": "Name",
+        "tracing": "Tracing"
+      },
+      "created": "Created vhost \"{{name}}\"",
+      "deleteConfirmTitle": "Delete vhost?",
+      "deleteConfirmDetail": "Delete vhost \"{{name}}\". All queues/exchanges/bindings under it are removed.",
+      "deleted": "Deleted vhost \"{{name}}\""
     }
   },
   "channels": {
