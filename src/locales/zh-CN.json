@@ -422,6 +422,15 @@
     "openExchange": "查看该 Exchange",
     "notFound": "在当前数据中找不到 “{{name}}”（可能已被删除或在其它 vhost）。"
   },
+  "diagnostics": {
+    "intro": {
+      "connections": "AMQP 客户端到 broker 的 TCP 连接列表：看谁连上来了、来自哪个 IP、协议版本、空闲多久。排查“连不上 / 连接泄漏”先看这里。",
+      "channels": "每条 AMQP 连接内部复用的逻辑通道，发布 / 消费 / ack 都跑在 channel 上。关注未确认消息数 (unacked)、prefetch、是否处于 flow 限流状态。",
+      "consumers": "当前注册在册的“在岗订阅”——某条 channel 调用 basic.consume 后还没断开的条目。展示订阅的队列、prefetch、ack 模式 (manual/auto)、活跃状态。短连 basic.get 拉取不会出现在这里。",
+      "nodes": "集群中每个 Erlang 节点的运行水位：内存 / 文件描述符 / 套接字 / 磁盘剩余 / 进程数。撞到 memory 水位或 disk_free_limit 会触发 flow control，发布方会被阻塞。",
+      "routingTester": "模拟一条消息：给定 exchange + 路由键 + headers，按当前 binding 拓扑计算它会落到哪些队列。发布前验证路由配置很好用，不会真的产生消息。"
+    }
+  },
   "validation": {
     "name": {
       "required": "必填",

@@ -101,6 +101,10 @@ export function DiagnosticsPanel({ connection, slice, initialSection }: Props) {
         })}
       </div>
 
+      <p className="rounded-md border border-zinc-200/80 bg-zinc-50/60 px-3 py-2 text-[11px] leading-relaxed text-zinc-600 dark:border-white/[0.06] dark:bg-zinc-900/40 dark:text-zinc-400">
+        {t(`diagnostics.intro.${section}`)}
+      </p>
+
       {section === 'connections' ? (
         <ConnectionList connection={connection} slice={slice ?? null} />
       ) : section === 'channels' ? (

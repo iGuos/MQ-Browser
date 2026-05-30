@@ -422,6 +422,15 @@
     "openExchange": "Open this exchange",
     "notFound": "\"{{name}}\" was not found in the current dataset (it may have been deleted or live in another vhost)."
   },
+  "diagnostics": {
+    "intro": {
+      "connections": "TCP connections from AMQP clients to the broker: who is connected, from which IP, protocol version, idle time. Start here when debugging \"can't connect\" or connection leaks.",
+      "channels": "Logical channels multiplexed inside each AMQP connection — publish, consume, and ack all run on channels. Watch unacked counts, prefetch, and whether flow control is engaged.",
+      "consumers": "Currently registered subscriptions — entries created by basic.consume that haven't been cancelled or disconnected. Shows the subscribed queue, prefetch, ack mode (manual/auto) and active status. Pull-style basic.get clients do not appear here.",
+      "nodes": "Per-node runtime health for the broker cluster: memory, file descriptors, sockets, free disk, Erlang processes. Hitting the memory high-watermark or disk_free_limit triggers flow control and blocks publishers.",
+      "routingTester": "Simulate a message: given an exchange + routing key + headers, compute which queues it would land in under the current binding topology. Useful for validating routing before publishing — no real message is produced."
+    }
+  },
   "validation": {
     "name": {
       "required": "Required",
