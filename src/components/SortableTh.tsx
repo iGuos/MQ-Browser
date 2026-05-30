@@ -29,19 +29,20 @@ export function SortableTh<K extends string>({
 }: Props<K>) {
   const active = sortKey !== null && sortState.key === sortKey
   const clickable = sortKey !== null && !disabled
+  // Per design: header labels are always left-aligned, independent of the
+  // cell-alignment hint (the `align` prop still flows down so callers can
+  // semantically tag numeric columns).
+  void align
   return (
     <th
       onClick={clickable ? () => onSort(sortKey) : undefined}
       className={[
-        'px-3 py-2 text-[11px] font-semibold uppercase tracking-wide',
-        align === 'right' ? 'text-right' : '',
+        'whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide',
         clickable ? 'cursor-pointer select-none hover:text-zinc-900 dark:hover:text-zinc-100' : '',
         active ? 'text-cyan-700 dark:text-cyan-300' : '',
       ].join(' ')}
     >
-      <span
-        className={`inline-flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}
-      >
+      <span className="inline-flex items-center gap-1 whitespace-nowrap">
         {children}
         {hint ? <InfoIcon hint={hint} /> : null}
         {clickable ? <SortIndicator active={active} dir={sortState.dir} /> : null}

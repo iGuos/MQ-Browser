@@ -401,7 +401,7 @@ export function QueueList({
 
 function Td({ children, align }: { children: React.ReactNode; align?: 'right' }) {
   return (
-    <td className={`px-3 py-2 align-top ${align === 'right' ? 'text-right tabular-nums' : ''}`}>
+    <td className={`px-3 py-2 align-middle ${align === 'right' ? 'text-right tabular-nums' : ''}`}>
       {children}
     </td>
   )
