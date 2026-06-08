@@ -553,8 +553,8 @@
     "step2": "「测试连接」调用管理插件的 /api/overview（端口 15672），用于验证凭据并确认管理插件已启用。",
     "step3": "顶部切换 vhost 可限定查询范围；选择「(全部)」则查询所有 vhost。",
     "step4": "查看消息使用 basic.get + reject(requeue=true)，不会改动 Broker 上的消息；如确实需要清空，请关闭 Requeue。",
-    "step5": "发布消息走 lapin + publisher confirms。默认 Exchange 会按路由键名称投递到同名队列。",
+    "step5": "发布消息通过 Management HTTP API 完成；返回的 routed 标志表示是否有队列匹配。默认 Exchange 会按路由键名称投递到同名队列。",
     "close": "关闭",
-    "note": "AMQP 帧由 lapin 处理；拓扑读取与 purge/delete 通过 RabbitMQ Management HTTP API。"
+    "note": "发布、查看、拓扑、purge/delete 全部通过 RabbitMQ Management HTTP API 完成，不会建立 AMQP 连接。"
   }
 }

@@ -1,8 +1,9 @@
 //! RabbitMQ Management HTTP API client.
 //!
-//! lapin only speaks the AMQP wire protocol — it cannot enumerate topology.
-//! For listing queues / exchanges / bindings / vhosts and for ops like purge,
-//! we call the management plugin's REST API (default port 15672).
+//! The AMQP wire protocol cannot enumerate topology, so for listing queues /
+//! exchanges / bindings / vhosts and for ops like purge — as well as publish
+//! and peek — we call the management plugin's REST API (default port 15672)
+//! via `reqwest`. No AMQP socket is ever opened.
 //!
 //! Docs: https://rawcdn.githack.com/rabbitmq/rabbitmq-server/v3.13.0/deps/rabbitmq_management/priv/www/api/index.html
 

@@ -553,8 +553,8 @@
     "step2": "Use “Test connection” — it calls /api/overview via the management plugin (port 15672) to confirm credentials and that the management plugin is enabled.",
     "step3": "Switch vhost on the top bar to scope topology lookups; the “(all)” option queries the unfiltered endpoints.",
     "step4": "Peek pulls messages with basic.get + reject(requeue=true); your broker copy is unchanged. Turn requeue OFF if you intentionally want to drain.",
-    "step5": "Publish uses lapin with publisher confirms. The default AMQP exchange routes by queue name in the routing key.",
+    "step5": "Publish goes through the Management HTTP API; the response's routed flag tells you whether any queue matched. The default AMQP exchange routes by queue name in the routing key.",
     "close": "Close",
-    "note": "lapin handles AMQP framing; topology + purge/delete go through the RabbitMQ Management HTTP API."
+    "note": "Everything — publish, peek, topology, purge/delete — goes through the RabbitMQ Management HTTP API; no AMQP socket is opened."
   }
 }

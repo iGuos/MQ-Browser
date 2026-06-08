@@ -1,106 +1,111 @@
 # MQ Browser
 
-> [English](./README.md) | [简体中文](./README.zh-CN.md)
+> [简体中文](./README.md) | [English](./README.en.md)
 
-A cross-platform **Tauri + TypeScript** desktop app for managing RabbitMQ connections and browsing exchanges, queues, bindings, and messages.
+一款跨平台的 **Tauri + TypeScript** 桌面应用，用于管理 RabbitMQ 连接，浏览 Exchange、队列、绑定与消息。
 
-The UI design **references** [MCP-Browser](https://github.com/iGuos/MCP-Browser) — multi-workspace tabs, a connection sidebar, a detail panel, dark mode, and English / Simplified Chinese localization. Only the look and interaction patterns are borrowed; this app has nothing to do with the Model Context Protocol — it manages RabbitMQ.
+界面设计**参考**了 [MCP-Browser](https://github.com/iGuos/MCP-Browser)：多工作区 Tab、连接侧栏、详情面板、深色模式、中英双语。这里只借鉴其外观与交互方式；本应用与 Model Context Protocol（MCP）没有任何关系，它管理的是 RabbitMQ。
 
-![MQ Browser — queue list](docs/screenshots/queues.jpg)
+![MQ Browser — 队列列表](docs/screenshots/queues.zh.jpg)
 
-> All screenshots use fictional **demo data**, not a real broker.
+> 所有截图均使用**虚构的 demo 数据**，并非真实 broker。
 
-## Overview
+## 概述
 
-MQ Browser is an open-source desktop application developed by Guo's for inspecting and operating RabbitMQ clusters. (It is unrelated to MCP — the MCP-Browser link above is only a UI design reference.) It talks to the broker's **Management HTTP API** to render topology and runtime state, and to publish and peek messages — no long-lived AMQP socket required.
+MQ Browser 是由 Guo's 开发的开源桌面应用，用于检视和操作 RabbitMQ 集群。（与 MCP 无关 —— 上文的 MCP-Browser 链接仅为界面设计参考。）它通过 broker 的 **Management HTTP API** 来读取拓扑与运行时状态，并完成消息的发布与查看 —— 无需维持长连接的 AMQP socket。
 
-## Core Technologies
+## 核心技术
 
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS + Zustand
-- **Shell**: Tauri 2 (Rust backend)
-- **HTTP client**: `reqwest` (rustls) against the RabbitMQ Management API (default port `15672`)
-- **i18n**: i18next / react-i18next (English + Simplified Chinese)
-- **Persistence**: `tauri-plugin-store` for connections and publish templates
+- **前端**：React 18 + TypeScript + Vite + Tailwind CSS + Zustand
+- **外壳**：Tauri 2（Rust 后端）
+- **HTTP 客户端**：`reqwest`（rustls），调用 RabbitMQ Management API（默认端口 `15672`）
+- **国际化**：i18next / react-i18next（英文 + 简体中文）
+- **持久化**：`tauri-plugin-store` 保存连接与发布模板
 
-## Key Features
+## 主要功能
 
-- **Connection Management**: Add, edit, test, and remove RabbitMQ connections; persisted locally via `tauri-plugin-store`.
-- **Multi-Workspace Tabs**: Single workspace by default, or multiple tabs each bound to an independent connection.
-- **Topology Browsing**: Vhosts, queues, exchanges, and bindings — with sortable tables and an entity drill-down drawer.
-- **Runtime State**: Live connections, channels, and consumers; close connections or channels on demand.
-- **Message Inspection**: Peek up to N messages (with optional requeue), view body, properties, and headers.
-- **Publish**: Send messages with routing key, properties, headers, and per-message TTL; reusable publish templates.
-- **Diagnostics & Routing**: A diagnostics panel with cross-list navigation and linked filters, plus a routing tester to verify how a key would be routed.
-- **Cluster Administration**: Manage nodes, policies, users, permissions, and vhosts.
-- **Definitions Import / Export**: Back up and restore broker definitions as JSON.
-- **Productivity**: Command palette, global shortcuts, auto-refresh, toasts, and dark mode.
+- **连接管理**：新增、编辑、测试、删除 RabbitMQ 连接；通过 `tauri-plugin-store` 本地持久化，并支持连接列表的 JSON 导入 / 导出。
+- **多工作区 Tab**：默认单工作区，也可开多个 Tab，每个绑定独立连接。
+- **拓扑浏览**：Vhost、队列、交换机、绑定 —— 表格支持排序，并提供实体下钻抽屉。
+- **运行时状态**：实时查看连接、信道、消费者；按需关闭连接或信道。
+- **消息查看**：peek 最多 N 条消息（可选 requeue），查看消息体、属性与 headers。
+- **消息发布**：支持路由键、属性、headers 与单条消息 TTL；可复用发布模板。
+- **诊断与路由**：诊断面板支持跨列表跳转与联动过滤，并提供路由测试器验证路由键命中情况。
+- **集群管理**：管理节点、策略、用户、权限与 Vhost。
+- **定义导入 / 导出**：以 JSON 备份与恢复 broker 定义。
+- **效率特性**：命令面板、全局快捷键、自动刷新、Toast 提示、深色模式。
 
-## Screenshots
+## 截图
 
-> Fictional demo data — `Acme` broker, sample services, and internal IPs. No real connection is shown.
+> 均为虚构 demo 数据 —— `Acme` broker、示例服务与内网 IP，不含任何真实连接。
 
-| Cluster overview | Exchanges |
+| 集群概览 | Exchange |
 | --- | --- |
-| ![Overview](docs/screenshots/overview.jpg) | ![Exchanges](docs/screenshots/exchanges.jpg) |
+| ![概览](docs/screenshots/overview.zh.jpg) | ![Exchange](docs/screenshots/exchanges.zh.jpg) |
 
-| Bindings | Policies |
+| 绑定 | 策略 |
 | --- | --- |
-| ![Bindings](docs/screenshots/bindings.jpg) | ![Policies](docs/screenshots/policies.jpg) |
+| ![绑定](docs/screenshots/bindings.zh.jpg) | ![策略](docs/screenshots/policies.zh.jpg) |
 
-| Diagnostics — connections / channels / consumers / nodes | Administration — users / permissions / vhosts |
+| 诊断 —— 连接 / 信道 / 消费者 / 节点 | 管理 —— 用户 / 权限 / Vhost |
 | --- | --- |
-| ![Diagnostics](docs/screenshots/diagnostics.jpg) | ![Admin](docs/screenshots/admin.jpg) |
+| ![诊断](docs/screenshots/diagnostics.zh.jpg) | ![管理](docs/screenshots/admin.zh.jpg) |
 
-| Publish a message | Peek messages (body / properties / headers) |
+| 发布消息 | 查看消息（消息体 / 属性 / headers） |
 | --- | --- |
-| ![Publish](docs/screenshots/publish.jpg) | ![Messages](docs/screenshots/messages.jpg) |
+| ![发布](docs/screenshots/publish.zh.jpg) | ![消息](docs/screenshots/messages.zh.jpg) |
 
-## Development Requirements
+## 开发要求
 
-- A working **Rust toolchain** (`rustup`)
-- **Node.js** 18+ (20 LTS recommended) and **pnpm**
-- Platform-specific Tauri prerequisites — see https://v2.tauri.app/start/prerequisites/
+- 已安装 **Rust 工具链**（`rustup`）
+- **Node.js** 18+（推荐 20 LTS）与 **pnpm**
+- Tauri 对应平台的依赖，参考 https://v2.tauri.app/start/prerequisites/
 
 ```bash
 pnpm install
-pnpm dev          # tauri dev (full desktop app)
-pnpm dev:vite     # vite only (UI in the browser)
+pnpm dev          # tauri dev（完整桌面应用）
+pnpm dev:vite     # 仅 vite（在浏览器中调试 UI）
 
-VITE_DEMO=1 pnpm dev:vite   # demo mode: render the UI with built-in fixtures, no broker
+VITE_DEMO=1 pnpm dev:vite   # demo 模式：用内置假数据渲染 UI，无需 broker
 ```
 
-> **Demo mode** (`VITE_DEMO=1`) swaps the Tauri backend for in-memory fixtures
-> (`src/lib/demoCore.ts`) so the UI renders in a plain browser — handy for the
-> screenshots above. It is off by default and never bundled in normal builds.
+> **Demo 模式**（`VITE_DEMO=1`）会用内存假数据（`src/lib/demoCore.ts`）替换
+> Tauri 后端，让 UI 能在普通浏览器中渲染 —— 上方截图即由此生成。默认关闭，
+> 正式构建不会打包。
 
-## Build
+## 构建
 
 ```bash
-pnpm build        # tauri build (native bundle)
-pnpm build:vite   # tsc + vite build (web assets only)
+pnpm build        # tauri build（原生安装包）
+pnpm build:vite   # tsc + vite build（仅 Web 资源）
 pnpm typecheck    # tsc --noEmit
 ```
 
-## Project Structure
+## 目录结构
 
 ```
-src/             React UI — stores (Zustand), MQ components, i18n, theme
-shared/          Types and constants shared across the TS code
-src-tauri/       Rust backend
-  src/commands/  Tauri commands: connections, files, management (HTTP), messages
-  src/types.rs   Rust-side data types
-  src/error.rs   Error handling
-scripts/         Build / dev tooling
+src/             React 前端 —— stores（Zustand）、MQ 组件、i18n、主题
+shared/          跨 TS 代码复用的类型与常量
+src-tauri/       Rust 后端
+  src/commands/  Tauri 命令：connections、files、management（HTTP）、messages
+  src/types.rs   Rust 侧数据类型
+  src/error.rs   错误处理
+scripts/         应用图标生成（generate_icon.py）
 ```
 
-## Architecture
+## 架构
 
 ```
-React UI (TypeScript) ──invoke──▶ Rust (Tauri commands) ──HTTP──▶ RabbitMQ Management API
+React UI (TypeScript) ──invoke──▶ Rust (Tauri 命令) ──HTTP──▶ RabbitMQ Management API
 ```
 
-The frontend never talks to the broker directly. All network and disk I/O runs in the Rust process; the UI calls type-safe wrappers in `src/lib/tauri.ts` over Tauri's `invoke`.
+前端从不直接连 broker。所有网络与磁盘 I/O 都在 Rust 进程中执行；UI 通过 `src/lib/tauri.ts` 中类型安全的封装调用 Tauri 的 `invoke`。
+
+## 说明
+
+- broker **仅通过 Management HTTP API** 访问（默认端口 `15672`）。AMQP 端口仅作为展示用的元数据记录，不会建立 AMQP 连接。
+- 连接通过 `tauri-plugin-store` 本地持久化，且连接**导出的 JSON 含明文密码** —— 请妥善保管导出文件。
 
 ## License
 
-MIT
+[MIT](./LICENSE) © Guo's
